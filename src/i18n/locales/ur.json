@@ -1,0 +1,55 @@
+{
+  "common": {
+    "save": "محفوظ کریں",
+    "cancel": "منسوخ کریں",
+    "delete": "حذف کریں",
+    "next": "اگلا",
+    "skip": "چھوڑیں",
+    "getStarted": "شروع کریں",
+    "urdu": "انگریزی",
+    "english": "English"
+  },
+  "auth": {
+    "login": "لاگ ان",
+    "email": "ای میل",
+    "password": "پاس ورڈ"
+  },
+  "home": {
+    "welcome": "نماز گائیڈ میں خوش آمدید",
+    "tagline": "آپ کا روحانی سفر یہاں سے شروع ہوتا ہے۔",
+    "changeLanguage": "زبان تبدیل کریں",
+    "english": "انگریزی",
+    "urdu": "اردو",
+    "resetOnboarding": "آن بورڈنگ دوبارہ شروع کریں"
+  },
+  "onboarding": {
+    "screen1": {
+      "headingUrdu": "نماز گائیڈ میں خوش آمدید",
+      "headingEnglish": "Welcome to Namaz Guide",
+      "subtitle": "کدم بہ کدم نماز سیکھیں۔"
+    },
+    "screen2": {
+      "headingUrdu": "بغیر انٹرنیٹ کے سیکھیں",
+      "headingEnglish": "Learn without internet",
+      "subtitle": "وضو، نماز اور قبلہ مکمل طور پر آف لائن کام کرتے ہیں۔"
+    },
+    "screen3": {
+      "headingUrdu": "صحیح تلفظ کے ساتھ سنیں",
+      "headingEnglish": "Listen with correct pronunciation",
+      "subtitle": "ہر سورہ اور کدم کے لیے آڈیو تلاوت۔"
+    },
+    "screen4": {
+      "headingUrdu": "اپنی رفتار سے سیکھیں",
+      "headingEnglish": "Learn at your own pace",
+      "subtitle": "سادہ طریقے سے شروع کریں، اور تیار ہونے پر اگلی تفصیلات کھولیں۔"
+    },
+    "screen5": {
+      "headingUrdu": "شروع کرنے کے لیے تیار؟",
+      "headingEnglish": "Ready to begin?",
+      "urduToggle": "اردو",
+      "englishToggle": "English",
+      "btnUrdu": "شروع کریں",
+      "btnEnglish": "Get Started"
+    }
+  }
+}

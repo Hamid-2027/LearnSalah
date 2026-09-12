@@ -1,0 +1,55 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "next": "Next",
+    "skip": "Skip",
+    "getStarted": "Get Started",
+    "urdu": "Urdu",
+    "english": "English"
+  },
+  "auth": {
+    "login": "Login",
+    "email": "Email",
+    "password": "Password"
+  },
+  "home": {
+    "welcome": "Welcome to Namaz Guide",
+    "tagline": "Your spiritual journey begins here.",
+    "changeLanguage": "Change Language",
+    "english": "English",
+    "urdu": "Urdu",
+    "resetOnboarding": "Restart Onboarding"
+  },
+  "onboarding": {
+    "screen1": {
+      "headingUrdu": "نماز گائیڈ میں خوش آمدید",
+      "headingEnglish": "Welcome to Namaz Guide",
+      "subtitle": "Learn to pray, step by step."
+    },
+    "screen2": {
+      "headingUrdu": "بغیر انٹرنیٹ کے سیکھیں",
+      "headingEnglish": "Learn without internet",
+      "subtitle": "Wuzu, Namaz and Qibla work fully offline."
+    },
+    "screen3": {
+      "headingUrdu": "صحیح تلفظ کے ساتھ سنیں",
+      "headingEnglish": "Listen with correct pronunciation",
+      "subtitle": "Audio recitation for every surah and step."
+    },
+    "screen4": {
+      "headingUrdu": "اپنی رفتار سے سیکھیں",
+      "headingEnglish": "Learn at your own pace",
+      "subtitle": "Start simple, unlock advanced details when ready."
+    },
+    "screen5": {
+      "headingUrdu": "شروع کرنے کے لیے تیار؟",
+      "headingEnglish": "Ready to begin?",
+      "urduToggle": "اردو",
+      "englishToggle": "English",
+      "btnUrdu": "شروع کریں",
+      "btnEnglish": "Get Started"
+    }
+  }
+}

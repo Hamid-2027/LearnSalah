@@ -1,0 +1,54 @@
+{
+  "expo": {
+    "name": "KiddoVision",
+    "slug": "KiddoVision",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./src/assets/images/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#000000",
+    "jsEngine": "hermes",
+    "splash": {
+      "image": "./src/assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#000000"
+    },
+    "androidStatusBar": {
+      "barStyle": "light-content",
+      "backgroundColor": "#000000",
+      "translucent": false
+    },
+    "ios": {
+      "supportsTablet": true,
+      "userInterfaceStyle": "dark",
+      "splash": {
+        "image": "./src/assets/images/splash-icon.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#000000",
+        "tabletImage": "./src/assets/images/splash-icon.png"
+      },
+      "bundleIdentifier": "com.yourcompany.kiddovision"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./src/assets/images/adaptive-icon.png",
+        "backgroundColor": "#000000"
+      },
+      "splash": {
+        "image": "./src/assets/images/splash-icon.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#000000"
+      },
+      "package": "com.yourcompany.kiddovision",
+      "versionCode": 1,
+      "permissions": [],
+      "softwareKeyboardLayoutMode": "pan"
+    },
+    "web": {
+      "favicon": "./src/assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-asset"
+    ]
+  }
+}
