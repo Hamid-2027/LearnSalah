@@ -7,48 +7,140 @@ import {
   Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useTheme } from '../context/ThemeContext';
 
-interface BottomTabBarProps {
-  activeTab: string;
-  onTabPress: (tab: string) => void;
-}
-
-export const BottomTabBar: React.FC<BottomTabBarProps> = ({ activeTab, onTabPress }) => {
+export const CustomBottomTabBar: React.FC<BottomTabBarProps> = ({
+  state,
+  descriptors,
+  navigation,
+}) => {
   const insets = useSafeAreaInsets();
+  const { isDarkMode, colors } = useTheme();
 
-  const tabs = [
-    { id: 'Quran', label: 'Quran', icon: 'book-open-variant', type: 'mci' },
-    { id: 'Hadith', label: 'Hadith', icon: 'star-four-points-outline', type: 'mci' },
-    { id: 'Home', label: 'Home', icon: 'home-outline', type: 'ion' },
-    { id: 'Ibadaat', label: 'Ibadaat', icon: 'mosque', type: 'mci' },
-    { id: 'More', label: 'More', icon: 'ellipsis-horizontal-circle-outline', type: 'ion' },
-  ];
-
-  // Dynamic bottom padding to ensure zero overlap with Android bottom navigation bar
-  const bottomPadding = Platform.OS === 'android' ? Math.max(insets.bottom, 12) : Math.max(insets.bottom, 8);
+  const bottomPadding = Platform.OS === 'android' ? Math.max(insets.bottom, 8) : Math.max(insets.bottom, 6);
 
   return (
-    <View style={[styles.tabContainer, { paddingBottom: bottomPadding }]}>
-      {tabs.map((tab) => {
-        const isActive = activeTab === tab.id;
-        const color = isActive ? '#3D348B' : '#8A8A93';
+    <View
+      style={[
+        styles.tabBarContainer,
+        {
+          backgroundColor: isDarkMode ? '#121212' : '#FFFFFF',
+          borderTopColor: isDarkMode ? '#29241B' : '#EAE3D2',
+          paddingBottom: bottomPadding,
+        },
+      ]}
+    >
+      {state.routes.map((route, index) => {
+        const { options } = descriptors[route.key];
+        const isFocused = state.index === index;
+
+        const onPress = () => {
+          const event = navigation.emit({
+            type: 'tabPress',
+            target: route.key,
+            canPreventDefault: true,
+          });
+
+          if (!isFocused && !event.defaultPrevented) {
+            navigation.navigate(route.name);
+          }
+        };
+
+        let label = route.name;
+        if (options.tabBarLabel !== undefined) {
+          label = options.tabBarLabel as string;
+        } else if (options.title !== undefined) {
+          label = options.title;
+        }
+
+        const renderIcon = (focused: boolean) => {
+          const activeColor = isDarkMode ? '#D4AF37' : '#FFFFFF';
+          const inactiveColor = isDarkMode ? '#60A5FA' : '#1D4ED8';
+          
+          const iconColor = focused ? activeColor : inactiveColor;
+          const size = 20;
+
+          if (route.name === 'Learn' || route.name === 'Quran') {
+            return <MaterialCommunityIcons name={focused ? "school" : "school-outline"} size={size} color={iconColor} />;
+          } else if (route.name === 'Prayer' || route.name === 'PrayerTimes') {
+            return <MaterialCommunityIcons name={focused ? "clock-time-four" : "clock-time-four-outline"} size={size} color={iconColor} />;
+          } else if (route.name === 'Hadith') {
+            return <MaterialCommunityIcons name={focused ? "star-four-points" : "star-four-points-outline"} size={size} color={iconColor} />;
+          } else if (route.name === 'Home') {
+            return <Ionicons name={focused ? "home" : "home-outline"} size={size} color={iconColor} />;
+          } else if (route.name === 'Ibadaat') {
+            return <MaterialCommunityIcons name={focused ? "mosque" : "mosque"} size={size} color={iconColor} />;
+          } else if (route.name === 'More') {
+            return <Ionicons name={focused ? "ellipsis-horizontal" : "ellipsis-horizontal-circle-outline"} size={size} color={iconColor} />;
+          }
+          return null;
+        };
 
         return (
           <TouchableOpacity
-            key={tab.id}
-            style={styles.tabButton}
-            activeOpacity={0.7}
-            onPress={() => onTabPress(tab.id)}
+            key={route.key}
+            accessibilityRole="button"
+            accessibilityState={isFocused ? { selected: true } : {}}
+            accessibilityLabel={options.tabBarAccessibilityLabel}
+            testID={(options as any).tabBarTestID}
+            onPress={onPress}
+            activeOpacity={0.8}
+            style={[styles.tabItem, isFocused && { flex: 1.3 }]}
           >
-            {tab.type === 'ion' ? (
-              <Ionicons name={tab.icon as any} size={22} color={color} />
-            ) : (
-              <MaterialCommunityIcons name={tab.icon as any} size={22} color={color} />
+            {/* Top Golden Dot Indicator when active */}
+            {isFocused && (
+              <View
+                style={[
+                  styles.activeDot,
+                  { backgroundColor: isDarkMode ? '#D4AF37' : (colors.primary || '#1E40AF') },
+                ]}
+              />
             )}
-            <Text style={[styles.tabLabel, { color, fontWeight: isActive ? '700' : '500' }]}>
-              {tab.label}
-            </Text>
+
+            <View
+              style={[
+                styles.pillBackground,
+                isFocused ? (
+                  isDarkMode
+                    ? { backgroundColor: '#2B2414', borderColor: '#D4AF37', flexDirection: 'row' }
+                    : { backgroundColor: colors.primary || '#1E40AF', borderColor: colors.primary || '#1E40AF', flexDirection: 'row' }
+                ) : {
+                  flexDirection: 'column',
+                  paddingVertical: 4,
+                  paddingHorizontal: 4,
+                }
+              ]}
+            >
+              {renderIcon(isFocused)}
+
+              {isFocused ? (
+                <Text
+                  style={[
+                    styles.activeTabText,
+                    {
+                      color: isDarkMode ? '#D4AF37' : '#FFFFFF',
+                    },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {label}
+                </Text>
+              ) : (
+                <Text
+                  style={[
+                    styles.unselectedTabText,
+                    {
+                      color: isDarkMode ? '#60A5FA' : '#1D4ED8',
+                    },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {label}
+                </Text>
+              )}
+            </View>
           </TouchableOpacity>
         );
       })}
@@ -57,30 +149,52 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({ activeTab, onTabPres
 };
 
 const styles = StyleSheet.create({
-  tabContainer: {
+  tabBarContainer: {
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: '#EBE8F5',
-    paddingTop: 8,
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    zIndex: 100,
-    elevation: 8,
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    borderTopWidth: 1.5,
+    paddingTop: 6,
+    paddingHorizontal: 6,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 12,
   },
-  tabButton: {
+  tabItem: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    position: 'relative',
   },
-  tabLabel: {
-    fontSize: 11,
-    marginTop: 4,
+  activeDot: {
+    position: 'absolute',
+    top: -6,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  pillBackground: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 22,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+    minHeight: 44,
+  },
+  activeTabText: {
+    fontSize: 12,
+    fontWeight: '800',
+    marginLeft: 6,
+    letterSpacing: 0.3,
+  },
+  unselectedTabText: {
+    fontSize: 9.5,
+    fontWeight: '600',
+    marginTop: 2,
+    letterSpacing: 0.1,
   },
 });

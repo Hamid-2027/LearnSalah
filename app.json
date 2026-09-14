@@ -18,9 +18,17 @@
       "backgroundColor": "#000000",
       "translucent": false
     },
+    "androidNavigationBar": {
+      "visible": "leanback",
+      "barStyle": "light-content",
+      "backgroundColor": "#000000"
+    },
     "ios": {
       "supportsTablet": true,
       "userInterfaceStyle": "dark",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Used to calculate Qibla direction toward Makkah."
+      },
       "splash": {
         "image": "./src/assets/images/splash-icon.png",
         "resizeMode": "contain",
@@ -41,14 +49,21 @@
       },
       "package": "com.yourcompany.kiddovision",
       "versionCode": 1,
-      "permissions": [],
+      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"],
       "softwareKeyboardLayoutMode": "pan"
     },
     "web": {
       "favicon": "./src/assets/images/favicon.png"
     },
     "plugins": [
-      "expo-asset"
+      "expo-asset",
+      "expo-font",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Used to calculate Qibla direction toward Makkah."
+        }
+      ]
     ]
   }
 }

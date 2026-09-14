@@ -9,6 +9,7 @@ import {
   ViewStyle,
 } from 'react-native';
 import { CardCornerDecoration } from './CornerDecoration';
+import { useTheme } from '../context/ThemeContext';
 
 interface FeatureCardProps {
   title: string;
@@ -21,7 +22,7 @@ interface FeatureCardProps {
   isDark?: boolean;
 }
 
-export const FeatureCard: React.FC<FeatureCardProps> = ({
+export const FeatureCard = ({
   title,
   icon,
   onPress,
@@ -30,15 +31,23 @@ export const FeatureCard: React.FC<FeatureCardProps> = ({
   cardStyle,
   titleStyle,
   isDark = false,
-}) => {
-  const defaultCornerColor = isDark ? '#7A7A80' : '#8E88B4';
+}: FeatureCardProps) => {
+  const { colors, isDarkMode } = useTheme();
+  
+  // Use context's dark mode if isDark is not explicitly provided
+  const actualIsDark = isDark !== undefined ? isDark : isDarkMode;
+  
+  const defaultCornerColor = colors.primary;
   const finalCornerColor = cornerColor || defaultCornerColor;
 
   return (
     <TouchableOpacity
       style={[
         styles.card,
-        isDark ? styles.cardDark : styles.cardLight,
+        {
+          backgroundColor: colors.surface,
+          borderColor: colors.border,
+        },
         cardStyle,
       ]}
       activeOpacity={0.78}
@@ -65,7 +74,7 @@ export const FeatureCard: React.FC<FeatureCardProps> = ({
         <Text
           style={[
             styles.titleText,
-            isDark ? styles.titleDark : styles.titleLight,
+            { color: colors.textPrimary },
             titleStyle,
           ]}
           numberOfLines={2}
@@ -101,14 +110,6 @@ const styles = StyleSheet.create({
       },
     }),
   },
-  cardLight: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#E8E8EE',
-  },
-  cardDark: {
-    backgroundColor: '#38383A',
-    borderColor: '#4A4A4E',
-  },
   badgeRibbon: {
     position: 'absolute',
     top: -1,
@@ -142,11 +143,5 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textAlign: 'center',
     letterSpacing: 0.1,
-  },
-  titleLight: {
-    color: '#1F1F1F',
-  },
-  titleDark: {
-    color: '#FFFFFF',
   },
 });

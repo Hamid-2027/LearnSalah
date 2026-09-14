@@ -7,27 +7,32 @@ import {
   Platform,
 } from 'react-native';
 import { MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
+import { useTheme } from '../context/ThemeContext';
+import { CardCornerDecoration } from './CornerDecoration';
 
 interface QuranBannerCardProps {
   onReadQuran?: () => void;
 }
 
 export const QuranBannerCard: React.FC<QuranBannerCardProps> = ({ onReadQuran }) => {
+  const { isDarkMode, colors } = useTheme();
+
   return (
-    <View style={styles.cardContainer}>
+    <View style={[styles.cardContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+      <CardCornerDecoration color={colors.gold} size={36} offset={2} />
       {/* Background Watermark Pattern */}
       <View style={styles.watermarkContainer}>
-        <MaterialCommunityIcons name="flower-poppy" size={90} color="#F3EFFC" />
+        <MaterialCommunityIcons name="flower-poppy" size={90} color={isDarkMode ? 'rgba(255,255,255,0.05)' : colors.surfaceSecondary} />
       </View>
 
       {/* Content Row */}
       <View style={styles.contentRow}>
         {/* Left Side: Calligraphy & Action Button */}
         <View style={styles.leftSection}>
-          <Text style={styles.arabicCalligraphy}>القرآن الكريم</Text>
+          <Text style={[styles.arabicCalligraphy, { color: colors.textPrimary }]}>القرآن الكريم</Text>
           
           <TouchableOpacity
-            style={styles.readBtn}
+            style={[styles.readBtn, { backgroundColor: colors.primary }]}
             activeOpacity={0.85}
             onPress={onReadQuran}
           >
@@ -40,16 +45,15 @@ export const QuranBannerCard: React.FC<QuranBannerCardProps> = ({ onReadQuran })
           <View style={styles.readerIllustration}>
             {/* Person sitting in Thobe icon graphic */}
             <View style={styles.rehalStand}>
-              <FontAwesome5 name="book-open" size={26} color="#7966B2" />
+              <FontAwesome5 name="book-open" size={26} color={colors.primary} />
             </View>
 
             <View style={styles.personBody}>
               {/* Kufi / Cap */}
-              <View style={styles.personCap} />
+              <View style={[styles.personCap, { backgroundColor: colors.primary }]} />
               {/* Person Head */}
               <View style={styles.personHead} />
-              {/* Person Garment */}
-              <View style={styles.personThobe} />
+              <View style={[styles.personThobe, { backgroundColor: isDarkMode ? colors.surfaceSecondary : '#F0EFF5', borderColor: isDarkMode ? colors.border : '#D4CEE8' }]} />
             </View>
           </View>
         </View>

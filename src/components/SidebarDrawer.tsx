@@ -7,11 +7,12 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   ScrollView,
-  SafeAreaView,
   Platform,
   Image,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons, Feather } from '@expo/vector-icons';
+import { useTheme } from '../context/ThemeContext';
 
 interface SidebarDrawerProps {
   visible: boolean;
@@ -27,10 +28,11 @@ export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({
   onSwitchLang,
 }) => {
   const isUrdu = lang === 'ur';
+  const { isDarkMode, toggleDarkMode, colors } = useTheme();
 
   const menuItems = [
     { icon: 'home-outline', titleEn: 'Home', titleUr: 'صفحہ اول', type: 'ion' },
-    { icon: 'book-open-outline', titleEn: 'Al-Quran', titleUr: 'القرآن', type: 'ion' },
+    { icon: 'book-outline', titleEn: 'Al-Quran', titleUr: 'القرآن', type: 'ion' },
     { icon: 'star-outline', titleEn: 'Hadith Collection', titleUr: 'حدیث کا مجموعہ', type: 'ion' },
     { icon: 'compass-outline', titleEn: 'Qibla Direction', titleUr: 'قبلہ کی سمت', type: 'mci' },
     { icon: 'clock-outline', titleEn: 'Prayer Timings', titleUr: 'اوقاتِ نماز', type: 'mci' },
@@ -51,12 +53,12 @@ export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({
     >
       <View style={styles.overlay}>
         {/* Drawer Content (Left Side) */}
-        <View style={styles.drawerContainer}>
-          <SafeAreaView style={{ flex: 1 }}>
+        <View style={[styles.drawerContainer, { backgroundColor: colors.surface }]}>
+          <SafeAreaView style={{ flex: 1 }} edges={['top', 'left', 'right']}>
             {/* Drawer Header */}
-            <View style={styles.header}>
+            <View style={[styles.header, { backgroundColor: colors.surfaceSecondary, borderBottomColor: colors.border }]}>
               <View style={styles.headerContent}>
-                <View style={styles.appIconBadge}>
+                <View style={[styles.appIconBadge, isDarkMode && { backgroundColor: '#2E2745' }]}>
                   <Image
                     source={require('../assets/images/app_logo.png')}
                     style={{ width: 36, height: 36 }}
@@ -64,39 +66,71 @@ export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({
                   />
                 </View>
                 <View style={{ flex: 1, marginLeft: 12 }}>
-                  <Text style={styles.appTitle}>Learn Namaz & Quran</Text>
-                  <Text style={styles.appSubtitle}>
+                  <Text style={[styles.appTitle, { color: colors.textPrimary }]}>Learn Namaz & Quran</Text>
+                  <Text style={[styles.appSubtitle, { color: colors.textSecondary }]}>
                     {isUrdu ? 'اسلامی ہدایت نامہ' : 'Your Islamic Guide'}
                   </Text>
                 </View>
                 <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-                  <Ionicons name="close" size={24} color="#555" />
+                  <Ionicons name="close" size={24} color={isDarkMode ? '#AAA' : '#555'} />
                 </TouchableOpacity>
               </View>
             </View>
 
             {/* Language Selection Row */}
-            <View style={styles.langSection}>
-              <Text style={styles.sectionLabel}>
+            <View style={[styles.langSection, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
                 {isUrdu ? 'زبان منتخب کریں' : 'Language'}
               </Text>
-              <View style={styles.langToggleRow}>
+              <View style={[styles.langToggleRow, { backgroundColor: colors.surfaceSecondary }]}>
                 <TouchableOpacity
-                  style={[styles.langOption, lang === 'en' && styles.langOptionActive]}
+                  style={[styles.langOption, lang === 'en' && { backgroundColor: colors.primary }]}
                   onPress={() => onSwitchLang('en')}
                 >
-                  <Text style={[styles.langText, lang === 'en' && styles.langTextActive]}>
+                  <Text style={[styles.langText, { color: lang === 'en' ? '#FFF' : colors.textSecondary }]}>
                     English
                   </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={[styles.langOption, lang === 'ur' && styles.langOptionActive]}
+                  style={[styles.langOption, lang === 'ur' && { backgroundColor: colors.primary }]}
                   onPress={() => onSwitchLang('ur')}
                 >
-                  <Text style={[styles.langText, lang === 'ur' && styles.langTextActive]}>
+                  <Text style={[styles.langText, { color: lang === 'ur' ? '#FFF' : colors.textSecondary }]}>
                     اردو
                   </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Appearance / Dark Mode Selection Row */}
+            <View style={[styles.langSection, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
+                {isUrdu ? 'تھیم (موضوع)' : 'Appearance'}
+              </Text>
+              <View style={[styles.langToggleRow, { backgroundColor: colors.surfaceSecondary }]}>
+                <TouchableOpacity
+                  style={[styles.langOption, !isDarkMode && { backgroundColor: colors.primary }]}
+                  onPress={() => toggleDarkMode(false)}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                    <Ionicons name="sunny-outline" size={15} color={!isDarkMode ? '#FFF' : colors.textSecondary} style={{ marginRight: 6 }} />
+                    <Text style={[styles.langText, { color: !isDarkMode ? '#FFF' : colors.textSecondary }]}>
+                      {isUrdu ? 'روشن' : 'Light'}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.langOption, isDarkMode && { backgroundColor: colors.primary }]}
+                  onPress={() => toggleDarkMode(true)}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                    <Ionicons name="moon" size={15} color={isDarkMode ? '#FFF' : colors.textSecondary} style={{ marginRight: 6 }} />
+                    <Text style={[styles.langText, { color: isDarkMode ? '#FFF' : colors.textSecondary }]}>
+                      {isUrdu ? 'تاریک' : 'Dark'}
+                    </Text>
+                  </View>
                 </TouchableOpacity>
               </View>
             </View>
@@ -113,22 +147,22 @@ export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({
                   >
                     <View style={styles.iconContainer}>
                       {item.type === 'ion' ? (
-                        <Ionicons name={item.icon as any} size={20} color="#7966B2" />
+                        <Ionicons name={item.icon as any} size={20} color={colors.primary} />
                       ) : (
-                        <MaterialCommunityIcons name={item.icon as any} size={20} color="#7966B2" />
+                        <MaterialCommunityIcons name={item.icon as any} size={20} color={colors.primary} />
                       )}
                     </View>
-                    <Text style={styles.menuText}>
+                    <Text style={[styles.menuText, { color: colors.textPrimary }]}>
                       {isUrdu ? item.titleUr : item.titleEn}
                     </Text>
-                    <Feather name="chevron-right" size={16} color="#BBB" style={{ marginLeft: 'auto' }} />
+                    <Feather name="chevron-right" size={16} color={isDarkMode ? '#666' : '#BBB'} style={{ marginLeft: 'auto' }} />
                   </TouchableOpacity>
                 ))}
               </View>
 
               <View style={styles.versionFooter}>
                 <Text style={styles.versionText}>Learn Namaz v1.0.0</Text>
-                <Text style={styles.blessingText}>جزاك اللهُ خيراً</Text>
+                <Text style={[styles.blessingText, { color: colors.primary }]}>جزاك اللهُ خيراً</Text>
               </View>
             </ScrollView>
           </SafeAreaView>
@@ -136,7 +170,7 @@ export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({
 
         {/* Backdrop Touchable (Right Side) */}
         <TouchableWithoutFeedback onPress={onClose}>
-          <View style={styles.backdrop} />
+          <View style={[styles.backdrop, { backgroundColor: colors.modalOverlay }]} />
         </TouchableWithoutFeedback>
       </View>
     </Modal>
@@ -197,7 +231,7 @@ const styles = StyleSheet.create({
   },
   langSection: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#F0EFF5',
   },
@@ -217,6 +251,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 6,
     alignItems: 'center',
+    justifyContent: 'center',
     borderRadius: 8,
   },
   langOptionActive: {
@@ -267,3 +302,4 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
+

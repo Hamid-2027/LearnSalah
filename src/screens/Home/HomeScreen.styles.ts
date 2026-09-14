@@ -1,17 +1,45 @@
-import { StyleSheet, Platform, Dimensions } from 'react-native';
+import { StyleSheet, Platform, Dimensions, Appearance } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
-export const PRIMARY = '#7966B2';
-export const PRIMARY_GRADIENT = ['#A896D8', '#CBBDEB', '#D8CEF2'];
-export const ACCENT_GOLD = '#E5A93C';
-export const ACCENT_CORAL = '#C85A48';
-export const BACKGROUND_LIGHT = '#F5F3FA';
+// Light and Dark theme color palettes
+const LIGHT = {
+  primary: '#087F5B',
+  primaryDark: '#056044',
+  secondary: '#C99A2E',
+  background: '#F9F7F0',
+  surface: '#FFFFFF',
+  surfaceSecondary: '#EEF5F1',
+  textPrimary: '#17201C',
+  textSecondary: '#64736C',
+  border: '#DCE5E0',
+  success: '#2E9B68',
+  warning: '#D99A24',
+  error: '#D9534F',
+};
+
+const DARK = {
+  primary: '#636363ff',
+  primaryDark: '#0B5D45',
+  secondary: '#D8B35A',
+  background: '#0B1713',
+  surface: '#12241D',
+  surfaceSecondary: '#193329',
+  textPrimary: '#F3F6F3',
+  textSecondary: '#AABBB3',
+  border: '#29443A',
+  success: '#4DC58D',
+  warning: '#E2B94F',
+  error: '#F27672',
+};
+
+const isDarkMode = Appearance.getColorScheme() === 'dark';
+const colors = isDarkMode ? DARK : LIGHT;
 
 export const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: BACKGROUND_LIGHT,
+    backgroundColor: colors.background,
   },
   scroll: {
     flex: 1,
@@ -30,12 +58,12 @@ export const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: '800',
-    color: '#2A2438',
+    color: colors.textPrimary,
     letterSpacing: 0.3,
   },
   sectionSubtitle: {
     fontSize: 12,
-    color: '#7966B2',
+    color: colors.secondary,
     fontWeight: '600',
   },
   gridContainer: {
@@ -46,12 +74,11 @@ export const styles = StyleSheet.create({
   gridCol: {
     width: '50%',
   },
-  
+
   // Custom Icon Badges & Calligraphy graphics inside feature cards
   arabicSymbolText: {
     fontSize: 28,
     fontWeight: '700',
-    color: '#C85A48',
     fontFamily: Platform.select({ ios: 'Times New Roman', android: 'serif' }),
   },
   aalimLogoContainer: {
@@ -83,11 +110,11 @@ export const styles = StyleSheet.create({
     width: 58,
     height: 58,
     borderRadius: 29,
-    backgroundColor: '#34C759',
+    backgroundColor: colors.primaryDark,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: '#FFFFFF',
+    borderColor: '#57b852ff',
     ...Platform.select({
       ios: {
         shadowColor: '#1F7E37',
@@ -101,7 +128,7 @@ export const styles = StyleSheet.create({
     }),
   },
   floatingWidgetText: {
-    color: '#FFFFFF',
+    color: colors.surface,
     fontSize: 13,
     fontWeight: '900',
     marginTop: -2,
