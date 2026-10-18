@@ -95,3 +95,25 @@ The app is configured in `app.json` with settings for:
 
 [Add contact information here]
 
+
+
+cd android && ./gradlew assembleRelease
+
+adb install -r android/app/build/outputs/apk/release/app-release.apk
+
+
+
+
+--------------------------
+cd android
+./gradlew bundleRelease
+
+chmod +x gradlew
+./gradlew bundleRelease
+
+
+After a successful build, the .aab will normally be here:
+
+android/app/build/outputs/bundle/release/app-release.aab
+
+

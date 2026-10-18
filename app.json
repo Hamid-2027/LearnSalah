@@ -1,22 +1,22 @@
 {
   "expo": {
-    "name": "KiddoVision",
-    "slug": "KiddoVision",
+    "name": "Salah Way",
+    "slug": "Salah-Way",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./src/assets/images/icon.png",
-    "userInterfaceStyle": "dark",
-    "backgroundColor": "#000000",
+    "icon": "./src/assets/images/app_logo.png",
+    "userInterfaceStyle": "automatic",
+    "backgroundColor": "#FFF8F3",
     "jsEngine": "hermes",
     "splash": {
-      "image": "./src/assets/images/splash-icon.png",
+      "image": "./src/assets/images/app_logo.png",
       "resizeMode": "contain",
-      "backgroundColor": "#000000"
+      "backgroundColor": "#FFF8F3"
     },
     "androidStatusBar": {
       "barStyle": "light-content",
-      "backgroundColor": "#000000",
-      "translucent": false
+      "backgroundColor": "#00000000",
+      "translucent": true
     },
     "androidNavigationBar": {
       "visible": "leanback",
@@ -25,29 +25,29 @@
     },
     "ios": {
       "supportsTablet": true,
-      "userInterfaceStyle": "dark",
+      "userInterfaceStyle": "automatic",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Used to calculate Qibla direction toward Makkah."
       },
       "splash": {
-        "image": "./src/assets/images/splash-icon.png",
+        "image": "./src/assets/images/app_logo.png",
         "resizeMode": "contain",
-        "backgroundColor": "#000000",
-        "tabletImage": "./src/assets/images/splash-icon.png"
+        "backgroundColor": "#FFF8F3",
+        "tabletImage": "./src/assets/images/app_logo.png"
       },
-      "bundleIdentifier": "com.yourcompany.kiddovision"
+      "bundleIdentifier": "com.salahway.app"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./src/assets/images/adaptive-icon.png",
-        "backgroundColor": "#000000"
+        "foregroundImage": "./src/assets/images/app_logo.png",
+        "backgroundColor": "#FFF8F3"
       },
       "splash": {
-        "image": "./src/assets/images/splash-icon.png",
+        "image": "./src/assets/images/app_logo.png",
         "resizeMode": "contain",
-        "backgroundColor": "#000000"
+        "backgroundColor": "#FFF8F3"
       },
-      "package": "com.yourcompany.kiddovision",
+      "package": "com.salahway.app",
       "versionCode": 1,
       "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"],
       "softwareKeyboardLayoutMode": "pan"

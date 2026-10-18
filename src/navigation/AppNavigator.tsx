@@ -1,31 +1,38 @@
 import React from 'react';
-import { Platform } from 'react-native';
+import { View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
 import { HomeScreen } from '../screens/Home/HomeScreen';
 import { LearnScreen } from '../screens/Learn/LearnScreen';
-import { HadithScreen } from '../screens/Hadith/HadithScreen';
+import { LessonsListScreen } from '../screens/Learn/LessonsListScreen';
 import { IbadaatScreen } from '../screens/Ibadaat/IbadaatScreen';
 import { MoreScreen } from '../screens/More/MoreScreen';
 import { OnboardingScreen } from '../screens/Onboarding/OnboardingScreen';
+import { AuthScreen } from '../screens/Auth/AuthScreen';
 import { PrayerScreen } from '../screens/PrayerScreen';
 import { QiblaScreen } from '../screens/Qibla/QiblaScreen';
 import { PrayerTimesScreen } from '../screens/PrayerTimes/PrayerTimesScreen';
 import { CustomBottomTabBar } from '../components/BottomTabBar';
+import { SidebarDrawer } from '../components/SidebarDrawer';
+import { useSidebar, useAppSelector, useAppDispatch, useAuth } from '../store/hooks';
+import { resetOnboarding } from '../store/slices/onboardingSlice';
 
 export type RootStackParamList = {
   Onboarding: undefined;
+  Auth: undefined;
   MainTabs: undefined;
-  PrayerGuide: undefined;
+  PrayerGuide: { prayerId?: string } | undefined;
   Qibla: undefined;
+  LessonsList: { level: string };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
 
 function MainTabNavigator() {
+  const dispatch = useAppDispatch();
   return (
     <Tab.Navigator
       initialRouteName="Home"
@@ -39,7 +46,10 @@ function MainTabNavigator() {
       <Tab.Screen name="Home">
         {(props) => (
           <HomeScreen
-            onResetOnboarding={() => props.navigation.replace('Onboarding')}
+            onResetOnboarding={() => {
+              dispatch(resetOnboarding());
+              props.navigation.replace('Onboarding');
+            }}
             navigation={props.navigation}
           />
         )}
@@ -50,30 +60,90 @@ function MainTabNavigator() {
   );
 }
 
-export const AppNavigator: React.FC = () => {
+/**
+ * Inner navigator wrapper — reads Redux sidebar + onboarding + auth state.
+ * New users → Onboarding → Auth; returning users → MainTabs directly.
+ */
+function AppWithSidebar() {
+  const { isOpen, closeSidebar } = useSidebar();
+  const isOnboardingComplete = useAppSelector((s) => s.onboarding.isCompleted);
+  const { isAuthenticated, isGuest } = useAuth();
+
+  const initialRoute: keyof RootStackParamList = !isOnboardingComplete
+    ? 'Onboarding'
+    : isAuthenticated || isGuest
+    ? 'MainTabs'
+    : 'Auth';
+
   return (
-    <NavigationContainer>
-      <Stack.Navigator initialRouteName="MainTabs">
+    <View style={{ flex: 1 }}>
+      <Stack.Navigator initialRouteName={initialRoute}>
+        {/* Onboarding — gesture swipe-back disabled so user can't skip */}
+        <Stack.Screen
+          name="Onboarding"
+          options={{ headerShown: false, gestureEnabled: false }}
+        >
+          {(props) => (
+            <OnboardingScreen
+              onFinish={() => {
+                if (isAuthenticated || isGuest) {
+                  props.navigation.replace('MainTabs');
+                } else {
+                  props.navigation.replace('Auth');
+                }
+              }}
+            />
+          )}
+        </Stack.Screen>
+
+        {/* Custom Supabase Auth Screen */}
+        <Stack.Screen
+          name="Auth"
+          options={{ headerShown: false }}
+        >
+          {(props) => (
+            <AuthScreen
+              onSuccess={() => props.navigation.replace('MainTabs')}
+              onGuestAccess={() => props.navigation.replace('MainTabs')}
+            />
+          )}
+        </Stack.Screen>
+
         <Stack.Screen
           name="MainTabs"
           component={MainTabNavigator}
-          options={{
-            headerShown: false,
-          }}
+          options={{ headerShown: false }}
         />
-
         <Stack.Screen
           name="PrayerGuide"
           component={PrayerScreen}
           options={{ headerShown: false }}
         />
-
         <Stack.Screen
           name="Qibla"
           component={QiblaScreen}
           options={{ headerShown: false }}
         />
+        <Stack.Screen
+          name="LessonsList"
+          component={LessonsListScreen}
+          options={{ headerShown: false }}
+        />
       </Stack.Navigator>
+
+      {/* ✅ Global sidebar — rendered once here, accessible from every tab */}
+      <SidebarDrawer
+        visible={isOpen}
+        onClose={closeSidebar}
+      />
+    </View>
+  );
+}
+
+export const AppNavigator: React.FC = () => {
+  return (
+    <NavigationContainer>
+      <AppWithSidebar />
     </NavigationContainer>
   );
 };

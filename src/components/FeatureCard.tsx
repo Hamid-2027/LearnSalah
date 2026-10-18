@@ -9,7 +9,7 @@ import {
   ViewStyle,
 } from 'react-native';
 import { CardCornerDecoration } from './CornerDecoration';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../store/hooks';
 
 interface FeatureCardProps {
   title: string;
@@ -98,6 +98,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     position: 'relative',
     margin: 6,
+    overflow: 'hidden',
     ...Platform.select({
       ios: {
         shadowColor: '#000000',
@@ -106,7 +107,7 @@ const styles = StyleSheet.create({
         shadowRadius: 6,
       },
       android: {
-        elevation: 2,
+        elevation: 0,
       },
     }),
   },

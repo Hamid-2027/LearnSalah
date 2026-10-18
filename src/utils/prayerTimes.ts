@@ -23,14 +23,14 @@ export function getPrayerScheduleForNow(lang: string = 'en'): PrayerScheduleInfo
   const daysEn = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const daysUr = ['اتوار', 'پیر', 'منگل', 'بدھ', 'جمعرات', 'جمعہ', 'ہفتہ'];
   const dayName = isUrdu ? daysUr[now.getDay()] : daysEn[now.getDay()];
-  
+
   const dd = String(now.getDate()).padStart(2, '0');
   const mm = String(now.getMonth() + 1).padStart(2, '0');
   const yy = String(now.getFullYear()).slice(-2);
   const gregorianDate = `${dayName} ${dd}-${mm}-${yy}`;
 
   // Hijri Date estimation
-  const hijriDate = isUrdu ? '۱۸ ربیع الاول، ۱۴۴۸' : '18 Rabi I, 1448';
+  const hijriDate = isUrdu ? '۲۴ ربیع الثانی، ۱۴۴۸' : '24 Rabi II, 1448';
 
   // Current Minutes since midnight
   const currentMinutes = now.getHours() * 60 + now.getMinutes();

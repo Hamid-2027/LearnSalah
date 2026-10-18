@@ -22,6 +22,33 @@
     "urdu": "اردو",
     "resetOnboarding": "آن بورڈنگ دوبارہ شروع کریں"
   },
+  "ibadaat": {
+    "title": "عبادات گائیڈ",
+    "subtitle": "رکعات کی تفصیل اور مرحلہ وار رہنما کے لیے نیچے کسی بھی نماز پر ٹیپ کریں",
+    "rakatCount": "{{count}} رکعت",
+    "prayers": {
+      "fajr": {
+        "detail": "2 رکعت",
+        "time": "05:00 AM · فجر"
+      },
+      "dhuhr": {
+        "detail": "4 رکعت",
+        "time": "12:30 PM · ظہر"
+      },
+      "asr": {
+        "detail": "4 رکعت",
+        "time": "04:30 PM · عصر"
+      },
+      "maghrib": {
+        "detail": "3 رکعت",
+        "time": "06:40 PM · مغرب"
+      },
+      "isha": {
+        "detail": "4 رکعت",
+        "time": "08:15 PM · عشاء"
+      }
+    }
+  },
   "onboarding": {
     "screen1": {
       "headingUrdu": "نماز گائیڈ میں خوش آمدید",

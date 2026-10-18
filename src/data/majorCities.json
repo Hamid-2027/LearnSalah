@@ -1,45 +1,440 @@
 [
-  { "city": "Islamabad", "country": "Pakistan", "lat": 33.6844, "lon": 73.0479 },
-  { "city": "Lahore", "country": "Pakistan", "lat": 31.5204, "lon": 74.3587 },
-  { "city": "Karachi", "country": "Pakistan", "lat": 24.8607, "lon": 67.0011 },
-  { "city": "Peshawar", "country": "Pakistan", "lat": 34.0151, "lon": 71.5249 },
-  { "city": "Quetta", "country": "Pakistan", "lat": 30.1798, "lon": 66.9750 },
-  { "city": "Rawalpindi", "country": "Pakistan", "lat": 33.5651, "lon": 73.0169 },
-  { "city": "Faisalabad", "country": "Pakistan", "lat": 31.4504, "lon": 73.1350 },
-  { "city": "Multan", "country": "Pakistan", "lat": 30.1575, "lon": 71.5249 },
-  { "city": "Sialkot", "country": "Pakistan", "lat": 32.4945, "lon": 74.5229 },
-  { "city": "Makkah", "country": "Saudi Arabia", "lat": 21.4225, "lon": 39.8262 },
-  { "city": "Madinah", "country": "Saudi Arabia", "lat": 24.5247, "lon": 39.5692 },
-  { "city": "Riyadh", "country": "Saudi Arabia", "lat": 24.7136, "lon": 46.6753 },
-  { "city": "Jeddah", "country": "Saudi Arabia", "lat": 21.5433, "lon": 39.1728 },
-  { "city": "Dubai", "country": "UAE", "lat": 25.2048, "lon": 55.2708 },
-  { "city": "Abu Dhabi", "country": "UAE", "lat": 24.4539, "lon": 54.3773 },
-  { "city": "Doha", "country": "Qatar", "lat": 25.2854, "lon": 51.5310 },
-  { "city": "Kuwait City", "country": "Kuwait", "lat": 29.3759, "lon": 47.9774 },
-  { "city": "Muscat", "country": "Oman", "lat": 23.5880, "lon": 58.3829 },
-  { "city": "Istanbul", "country": "Turkey", "lat": 41.0082, "lon": 28.9784 },
-  { "city": "Ankara", "country": "Turkey", "lat": 39.9334, "lon": 32.8597 },
-  { "city": "Cairo", "country": "Egypt", "lat": 30.0444, "lon": 31.2357 },
-  { "city": "Amman", "country": "Jordan", "lat": 31.9454, "lon": 35.9284 },
-  { "city": "Beirut", "country": "Lebanon", "lat": 33.8938, "lon": 35.5018 },
-  { "city": "Baghdad", "country": "Iraq", "lat": 33.3152, "lon": 44.3661 },
-  { "city": "Tehran", "country": "Iran", "lat": 35.6892, "lon": 51.3890 },
-  { "city": "Kabul", "country": "Afghanistan", "lat": 34.5553, "lon": 69.2075 },
-  { "city": "Kuala Lumpur", "country": "Malaysia", "lat": 3.1390, "lon": 101.6869 },
-  { "city": "Jakarta", "country": "Indonesia", "lat": -6.2088, "lon": 106.8456 },
-  { "city": "Dhaka", "country": "Bangladesh", "lat": 23.8103, "lon": 90.4125 },
-  { "city": "Delhi", "country": "India", "lat": 28.6139, "lon": 77.2090 },
-  { "city": "Mumbai", "country": "India", "lat": 19.0760, "lon": 72.8777 },
-  { "city": "London", "country": "United Kingdom", "lat": 51.5074, "lon": -0.1278 },
-  { "city": "Birmingham", "country": "United Kingdom", "lat": 52.4862, "lon": -1.8904 },
-  { "city": "Paris", "country": "France", "lat": 48.8566, "lon": 2.3522 },
-  { "city": "Berlin", "country": "Germany", "lat": 52.5200, "lon": 13.4050 },
-  { "city": "New York", "country": "USA", "lat": 40.7128, "lon": -74.0060 },
-  { "city": "Chicago", "country": "USA", "lat": 41.8781, "lon": -87.6298 },
-  { "city": "Los Angeles", "country": "USA", "lat": 34.0522, "lon": -118.2437 },
-  { "city": "Houston", "country": "USA", "lat": 29.7604, "lon": -95.3698 },
-  { "city": "Toronto", "country": "Canada", "lat": 43.6532, "lon": -79.3832 },
-  { "city": "Sydney", "country": "Australia", "lat": -33.8688, "lon": 151.2093 },
-  { "city": "Melbourne", "country": "Australia", "lat": -37.8136, "lon": 144.9631 },
-  { "city": "Tokyo", "country": "Japan", "lat": 35.6762, "lon": 139.6503 }
+  {
+    "city": "Islamabad",
+    "country": "Pakistan",
+    "lat": 33.6844,
+    "lon": 73.0479
+  },
+  {
+    "city": "Rawalpindi",
+    "country": "Pakistan",
+    "lat": 33.5651,
+    "lon": 73.0169
+  },
+  {
+    "city": "Lahore",
+    "country": "Pakistan",
+    "lat": 31.5204,
+    "lon": 74.3587
+  },
+  {
+    "city": "Karachi",
+    "country": "Pakistan",
+    "lat": 24.8607,
+    "lon": 67.0011
+  },
+  {
+    "city": "Peshawar",
+    "country": "Pakistan",
+    "lat": 34.0151,
+    "lon": 71.5249
+  },
+  {
+    "city": "Quetta",
+    "country": "Pakistan",
+    "lat": 30.1798,
+    "lon": 66.9750
+  },
+  {
+    "city": "Multan",
+    "country": "Pakistan",
+    "lat": 30.1575,
+    "lon": 71.5249
+  },
+  {
+    "city": "Faisalabad",
+    "country": "Pakistan",
+    "lat": 31.4504,
+    "lon": 73.1350
+  },
+  {
+    "city": "Hyderabad",
+    "country": "Pakistan",
+    "lat": 25.3960,
+    "lon": 68.3578
+  },
+  {
+    "city": "Sialkot",
+    "country": "Pakistan",
+    "lat": 32.4945,
+    "lon": 74.5229
+  },
+  {
+    "city": "Gujranwala",
+    "country": "Pakistan",
+    "lat": 32.1877,
+    "lon": 74.1945
+  },
+  {
+    "city": "Bahawalpur",
+    "country": "Pakistan",
+    "lat": 29.3957,
+    "lon": 71.6833
+  },
+  {
+    "city": "Sargodha",
+    "country": "Pakistan",
+    "lat": 32.0836,
+    "lon": 72.6711
+  },
+  {
+    "city": "Sukkur",
+    "country": "Pakistan",
+    "lat": 27.7052,
+    "lon": 68.8574
+  },
+  {
+    "city": "Larkana",
+    "country": "Pakistan",
+    "lat": 27.5590,
+    "lon": 68.2120
+  },
+  {
+    "city": "Sheikhupura",
+    "country": "Pakistan",
+    "lat": 31.7167,
+    "lon": 73.9850
+  },
+  {
+    "city": "Rahim Yar Khan",
+    "country": "Pakistan",
+    "lat": 28.4212,
+    "lon": 70.2989
+  },
+  {
+    "city": "Jhang",
+    "country": "Pakistan",
+    "lat": 31.2781,
+    "lon": 72.3317
+  },
+  {
+    "city": "Dera Ghazi Khan",
+    "country": "Pakistan",
+    "lat": 30.0489,
+    "lon": 70.6317
+  },
+  {
+    "city": "Gujrat",
+    "country": "Pakistan",
+    "lat": 32.5736,
+    "lon": 74.0789
+  },
+  {
+    "city": "Delhi",
+    "country": "India",
+    "lat": 28.6139,
+    "lon": 77.2090
+  },
+  {
+    "city": "Mumbai",
+    "country": "India",
+    "lat": 19.0760,
+    "lon": 72.8777
+  },
+  {
+    "city": "Hyderabad",
+    "country": "India",
+    "lat": 17.3850,
+    "lon": 78.4867
+  },
+  {
+    "city": "Kolkata",
+    "country": "India",
+    "lat": 22.5726,
+    "lon": 88.3639
+  },
+  {
+    "city": "Chennai",
+    "country": "India",
+    "lat": 13.0827,
+    "lon": 80.2707
+  },
+  {
+    "city": "Bengaluru",
+    "country": "India",
+    "lat": 12.9716,
+    "lon": 77.5946
+  },
+  {
+    "city": "Ahmedabad",
+    "country": "India",
+    "lat": 23.0225,
+    "lon": 72.5714
+  },
+  {
+    "city": "Pune",
+    "country": "India",
+    "lat": 18.5204,
+    "lon": 73.8567
+  },
+  {
+    "city": "Surat",
+    "country": "India",
+    "lat": 21.1702,
+    "lon": 72.8311
+  },
+  {
+    "city": "Jaipur",
+    "country": "India",
+    "lat": 26.9124,
+    "lon": 75.7873
+  },
+  {
+    "city": "Lucknow",
+    "country": "India",
+    "lat": 26.8467,
+    "lon": 80.9462
+  },
+  {
+    "city": "Kanpur",
+    "country": "India",
+    "lat": 26.4499,
+    "lon": 80.3319
+  },
+  {
+    "city": "Nagpur",
+    "country": "India",
+    "lat": 21.1458,
+    "lon": 79.0882
+  },
+  {
+    "city": "Indore",
+    "country": "India",
+    "lat": 22.7196,
+    "lon": 75.8577
+  },
+  {
+    "city": "Bhopal",
+    "country": "India",
+    "lat": 23.2599,
+    "lon": 77.4126
+  },
+  {
+    "city": "Patna",
+    "country": "India",
+    "lat": 25.5941,
+    "lon": 85.1376
+  },
+  {
+    "city": "Dhaka",
+    "country": "Bangladesh",
+    "lat": 23.8103,
+    "lon": 90.4125
+  },
+  {
+    "city": "Chittagong",
+    "country": "Bangladesh",
+    "lat": 22.3569,
+    "lon": 91.7832
+  },
+  {
+    "city": "Khulna",
+    "country": "Bangladesh",
+    "lat": 22.8456,
+    "lon": 89.5403
+  },
+  {
+    "city": "Rajshahi",
+    "country": "Bangladesh",
+    "lat": 24.3745,
+    "lon": 88.6042
+  },
+  {
+    "city": "Sylhet",
+    "country": "Bangladesh",
+    "lat": 24.8949,
+    "lon": 91.8687
+  },
+  {
+    "city": "Bogra",
+    "country": "Bangladesh",
+    "lat": 24.8465,
+    "lon": 89.3778
+  },
+  {
+    "city": "Comilla",
+    "country": "Bangladesh",
+    "lat": 23.4607,
+    "lon": 91.1809
+  },
+  {
+    "city": "Mymensingh",
+    "country": "Bangladesh",
+    "lat": 24.7471,
+    "lon": 90.4203
+  },
+  {
+    "city": "Barisal",
+    "country": "Bangladesh",
+    "lat": 22.7010,
+    "lon": 90.3535
+  },
+  {
+    "city": "Rangpur",
+    "country": "Bangladesh",
+    "lat": 25.7439,
+    "lon": 89.2752
+  },
+  {
+    "city": "Narayanganj",
+    "country": "Bangladesh",
+    "lat": 23.6238,
+    "lon": 90.5000
+  },
+  {
+    "city": "Gazipur",
+    "country": "Bangladesh",
+    "lat": 24.0023,
+    "lon": 90.4264
+  },
+  {
+    "city": "Mecca",
+    "country": "Saudi Arabia",
+    "lat": 21.3891,
+    "lon": 39.8579
+  },
+  {
+    "city": "Medina",
+    "country": "Saudi Arabia",
+    "lat": 24.5247,
+    "lon": 39.5692
+  },
+  {
+    "city": "Riyadh",
+    "country": "Saudi Arabia",
+    "lat": 24.6877,
+    "lon": 46.7219
+  },
+  {
+    "city": "Jeddah",
+    "country": "Saudi Arabia",
+    "lat": 21.2854,
+    "lon": 39.2376
+  },
+  {
+    "city": "Dubai",
+    "country": "UAE",
+    "lat": 25.2048,
+    "lon": 55.2708
+  },
+  {
+    "city": "Abu Dhabi",
+    "country": "UAE",
+    "lat": 24.4539,
+    "lon": 54.3773
+  },
+  {
+    "city": "Istanbul",
+    "country": "Turkey",
+    "lat": 41.0082,
+    "lon": 28.9784
+  },
+  {
+    "city": "Ankara",
+    "country": "Turkey",
+    "lat": 39.9334,
+    "lon": 32.8597
+  },
+  {
+    "city": "Cairo",
+    "country": "Egypt",
+    "lat": 30.0444,
+    "lon": 31.2357
+  },
+  {
+    "city": "Kuala Lumpur",
+    "country": "Malaysia",
+    "lat": 3.1390,
+    "lon": 101.6869
+  },
+  {
+    "city": "Jakarta",
+    "country": "Indonesia",
+    "lat": -6.2088,
+    "lon": 106.8456
+  },
+  {
+    "city": "London",
+    "country": "United Kingdom",
+    "lat": 51.5074,
+    "lon": -0.1278
+  },
+  {
+    "city": "Birmingham",
+    "country": "United Kingdom",
+    "lat": 52.4862,
+    "lon": -1.8904
+  },
+  {
+    "city": "Manchester",
+    "country": "United Kingdom",
+    "lat": 53.4808,
+    "lon": -2.2426
+  },
+  {
+    "city": "Toronto",
+    "country": "Canada",
+    "lat": 43.6532,
+    "lon": -79.3832
+  },
+  {
+    "city": "New York",
+    "country": "USA",
+    "lat": 40.7128,
+    "lon": -74.0060
+  },
+  {
+    "city": "Los Angeles",
+    "country": "USA",
+    "lat": 34.0522,
+    "lon": -118.2437
+  },
+  {
+    "city": "Chicago",
+    "country": "USA",
+    "lat": 41.8781,
+    "lon": -87.6298
+  },
+  {
+    "city": "Houston",
+    "country": "USA",
+    "lat": 29.7604,
+    "lon": -95.3698
+  },
+  {
+    "city": "Tehran",
+    "country": "Iran",
+    "lat": 35.6892,
+    "lon": 51.3890
+  },
+  {
+    "city": "Baghdad",
+    "country": "Iraq",
+    "lat": 33.3152,
+    "lon": 44.3661
+  },
+  {
+    "city": "Amman",
+    "country": "Jordan",
+    "lat": 31.9454,
+    "lon": 35.9284
+  },
+  {
+    "city": "Kabul",
+    "country": "Afghanistan",
+    "lat": 34.5553,
+    "lon": 69.2075
+  },
+  {
+    "city": "Nairobi",
+    "country": "Kenya",
+    "lat": -1.2921,
+    "lon": 36.8219
+  },
+  {
+    "city": "Lagos",
+    "country": "Nigeria",
+    "lat": 6.5244,
+    "lon": 3.3792
+  }
 ]

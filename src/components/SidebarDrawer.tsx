@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -9,26 +9,35 @@ import {
   ScrollView,
   Platform,
   Image,
+  Dimensions,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { Ionicons, MaterialCommunityIcons, Feather } from '@expo/vector-icons';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme, useAuth } from '../store/hooks';
+
+const SCREEN_HEIGHT = Dimensions.get('window').height;
 
 interface SidebarDrawerProps {
   visible: boolean;
   onClose: () => void;
-  lang: string;
-  onSwitchLang: (lang: string) => void;
 }
 
 export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({
   visible,
   onClose,
-  lang,
-  onSwitchLang,
 }) => {
+  const navigation = useNavigation<any>();
+  const { user, isAuthenticated, isGuest, signOut } = useAuth();
+  // Internal language state — drawer manages its own language selection
+  const [lang, setLang] = useState<'en' | 'ur'>('en');
   const isUrdu = lang === 'ur';
   const { isDarkMode, toggleDarkMode, colors } = useTheme();
+
+  // ✅ Always-accurate insets — never stale inside a Modal
+  const insets = useSafeAreaInsets();
+  const topPad = insets.top > 0 ? insets.top : Platform.OS === 'android' ? 24 : 44;
+  const bottomPad = insets.bottom > 0 ? insets.bottom : 16;
 
   const menuItems = [
     { icon: 'home-outline', titleEn: 'Home', titleUr: 'صفحہ اول', type: 'ion' },
@@ -49,14 +58,33 @@ export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({
       visible={visible}
       animationType="fade"
       transparent={true}
+      statusBarTranslucent={true}
       onRequestClose={onClose}
     >
       <View style={styles.overlay}>
         {/* Drawer Content (Left Side) */}
-        <View style={[styles.drawerContainer, { backgroundColor: colors.surface }]}>
-          <SafeAreaView style={{ flex: 1 }} edges={['top', 'left', 'right']}>
+        <View
+          style={[
+            styles.drawerContainer,
+            {
+              backgroundColor: colors.surface,
+              // ✅ Explicit full screen height — reliable inside Modal
+              height: SCREEN_HEIGHT,
+            },
+          ]}
+        >
+          {/* ✅ Plain View with manual inset-based paddingTop instead of SafeAreaView */}
+          <View style={[styles.drawerInner, { paddingTop: topPad, paddingBottom: bottomPad }]}>
             {/* Drawer Header */}
-            <View style={[styles.header, { backgroundColor: colors.surfaceSecondary, borderBottomColor: colors.border }]}>
+            <View
+              style={[
+                styles.header,
+                {
+                  backgroundColor: colors.surfaceSecondary,
+                  borderBottomColor: colors.border,
+                },
+              ]}
+            >
               <View style={styles.headerContent}>
                 <View style={[styles.appIconBadge, isDarkMode && { backgroundColor: '#2E2745' }]}>
                   <Image
@@ -77,6 +105,47 @@ export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({
               </View>
             </View>
 
+            {/* Account / Guest Profile Row */}
+            <View style={[styles.accountCard, { backgroundColor: colors.surfaceSecondary, borderColor: colors.border }]}>
+              <View style={[styles.accountAvatar, { backgroundColor: isAuthenticated ? 'rgba(34,211,238,0.15)' : 'rgba(255,255,255,0.08)' }]}>
+                <Ionicons
+                  name={isAuthenticated ? 'person' : 'sparkles-outline'}
+                  size={18}
+                  color={isAuthenticated ? '#22d3ee' : colors.textSecondary}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.accountName, { color: colors.textPrimary }]} numberOfLines={1}>
+                  {isAuthenticated ? (user?.fullName || user?.email || 'Believer') : 'Guest Mode'}
+                </Text>
+                <Text style={[styles.accountSub, { color: colors.textSecondary }]} numberOfLines={1}>
+                  {isAuthenticated ? (user?.email || 'Signed in') : 'Sign in to sync progress'}
+                </Text>
+              </View>
+              {isAuthenticated ? (
+                <TouchableOpacity
+                  style={[styles.authActionBtn, { borderColor: 'rgba(239, 68, 68, 0.4)' }]}
+                  onPress={() => {
+                    signOut();
+                    onClose();
+                    navigation.navigate('Auth');
+                  }}
+                >
+                  <Text style={[styles.authActionText, { color: '#ef4444' }]}>Sign Out</Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  style={[styles.authActionBtn, { borderColor: '#22d3ee' }]}
+                  onPress={() => {
+                    onClose();
+                    navigation.navigate('Auth');
+                  }}
+                >
+                  <Text style={[styles.authActionText, { color: '#22d3ee' }]}>Sign In</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
             {/* Language Selection Row */}
             <View style={[styles.langSection, { borderBottomColor: colors.border }]}>
               <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
@@ -85,7 +154,7 @@ export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({
               <View style={[styles.langToggleRow, { backgroundColor: colors.surfaceSecondary }]}>
                 <TouchableOpacity
                   style={[styles.langOption, lang === 'en' && { backgroundColor: colors.primary }]}
-                  onPress={() => onSwitchLang('en')}
+                  onPress={() => setLang('en')}
                 >
                   <Text style={[styles.langText, { color: lang === 'en' ? '#FFF' : colors.textSecondary }]}>
                     English
@@ -94,7 +163,7 @@ export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({
 
                 <TouchableOpacity
                   style={[styles.langOption, lang === 'ur' && { backgroundColor: colors.primary }]}
-                  onPress={() => onSwitchLang('ur')}
+                  onPress={() => setLang('ur')}
                 >
                   <Text style={[styles.langText, { color: lang === 'ur' ? '#FFF' : colors.textSecondary }]}>
                     اردو
@@ -114,7 +183,12 @@ export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({
                   onPress={() => toggleDarkMode(false)}
                 >
                   <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-                    <Ionicons name="sunny-outline" size={15} color={!isDarkMode ? '#FFF' : colors.textSecondary} style={{ marginRight: 6 }} />
+                    <Ionicons
+                      name="sunny-outline"
+                      size={15}
+                      color={!isDarkMode ? '#FFF' : colors.textSecondary}
+                      style={{ marginRight: 6 }}
+                    />
                     <Text style={[styles.langText, { color: !isDarkMode ? '#FFF' : colors.textSecondary }]}>
                       {isUrdu ? 'روشن' : 'Light'}
                     </Text>
@@ -126,7 +200,12 @@ export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({
                   onPress={() => toggleDarkMode(true)}
                 >
                   <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-                    <Ionicons name="moon" size={15} color={isDarkMode ? '#FFF' : colors.textSecondary} style={{ marginRight: 6 }} />
+                    <Ionicons
+                      name="moon"
+                      size={15}
+                      color={isDarkMode ? '#FFF' : colors.textSecondary}
+                      style={{ marginRight: 6 }}
+                    />
                     <Text style={[styles.langText, { color: isDarkMode ? '#FFF' : colors.textSecondary }]}>
                       {isUrdu ? 'تاریک' : 'Dark'}
                     </Text>
@@ -155,7 +234,12 @@ export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({
                     <Text style={[styles.menuText, { color: colors.textPrimary }]}>
                       {isUrdu ? item.titleUr : item.titleEn}
                     </Text>
-                    <Feather name="chevron-right" size={16} color={isDarkMode ? '#666' : '#BBB'} style={{ marginLeft: 'auto' }} />
+                    <Feather
+                      name="chevron-right"
+                      size={16}
+                      color={isDarkMode ? '#666' : '#BBB'}
+                      style={{ marginLeft: 'auto' }}
+                    />
                   </TouchableOpacity>
                 ))}
               </View>
@@ -165,7 +249,7 @@ export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({
                 <Text style={[styles.blessingText, { color: colors.primary }]}>جزاك اللهُ خيراً</Text>
               </View>
             </ScrollView>
-          </SafeAreaView>
+          </View>
         </View>
 
         {/* Backdrop Touchable (Right Side) */}
@@ -190,16 +274,19 @@ const styles = StyleSheet.create({
     width: '78%',
     maxWidth: 320,
     backgroundColor: '#FFFFFF',
-    height: '100%',
     shadowColor: '#000',
     shadowOffset: { width: 4, height: 0 },
     shadowOpacity: 0.15,
     shadowRadius: 12,
     elevation: 10,
   },
+  // ✅ Inner layout container that gets the manual safe-area padding
+  drawerInner: {
+    flex: 1,
+  },
   header: {
     paddingHorizontal: 16,
-    paddingVertical: 18,
+    paddingVertical: 16,
     backgroundColor: '#F5F2FC',
     borderBottomWidth: 1,
     borderBottomColor: '#E8E8F2',
@@ -254,16 +341,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: 8,
   },
-  langOptionActive: {
-    backgroundColor: '#7966B2',
-  },
   langText: {
     fontSize: 13,
     fontWeight: '600',
     color: '#555',
-  },
-  langTextActive: {
-    color: '#FFF',
   },
   menuScroll: {
     flex: 1,
@@ -301,5 +382,41 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontWeight: '600',
   },
+  accountCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    gap: 10,
+  },
+  accountAvatar: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  accountName: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  accountSub: {
+    fontSize: 11,
+    marginTop: 1,
+  },
+  authActionBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  authActionText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
 });
-

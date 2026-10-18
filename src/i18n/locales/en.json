@@ -22,6 +22,33 @@
     "urdu": "Urdu",
     "resetOnboarding": "Restart Onboarding"
   },
+  "ibadaat": {
+    "title": "Ibadaat Guide",
+    "subtitle": "Tap any prayer below to learn Raka'at breakdown & step-by-step guidance",
+    "rakatCount": "{{count}} Rakat",
+    "prayers": {
+      "fajr": {
+        "detail": "2 Rakat",
+        "time": "05:00 AM · Dawn"
+      },
+      "dhuhr": {
+        "detail": "4 Rakat",
+        "time": "12:30 PM · Midday"
+      },
+      "asr": {
+        "detail": "4 Rakat",
+        "time": "04:30 PM · Afternoon"
+      },
+      "maghrib": {
+        "detail": "3 Rakat",
+        "time": "06:40 PM · Sunset"
+      },
+      "isha": {
+        "detail": "4 Rakat",
+        "time": "08:15 PM · Night"
+      }
+    }
+  },
   "onboarding": {
     "screen1": {
       "headingUrdu": "نماز گائیڈ میں خوش آمدید",

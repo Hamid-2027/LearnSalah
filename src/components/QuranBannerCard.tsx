@@ -7,7 +7,7 @@ import {
   Platform,
 } from 'react-native';
 import { MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../store/hooks';
 import { CardCornerDecoration } from './CornerDecoration';
 
 interface QuranBannerCardProps {

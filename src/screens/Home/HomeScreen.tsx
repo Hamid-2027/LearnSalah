@@ -9,8 +9,11 @@ import {
   Pressable,
   StyleSheet,
   Platform,
+  ImageBackground,
+  StatusBar as RNStatusBar,
 } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useIsFocused, useScrollToTop } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import { useTranslation } from 'react-i18next';
 import {
@@ -22,10 +25,11 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { HeaderBanner } from '../../components/HeaderBanner';
-import { SidebarDrawer } from '../../components/SidebarDrawer';
 import { CardCornerDecoration } from '../../components/CornerDecoration';
 import { styles } from './HomeScreen.styles';
-import { useTheme } from '../../context/ThemeContext';
+import { useTheme, useSidebar } from '../../store/hooks';
+
+const salahQuranBg = require('../../assets/images/stepbystep_ref_img.png');
 
 type Gender = 'Male' | 'Female';
 type Sect = 'Sunni' | 'Shia';
@@ -39,114 +43,116 @@ interface SheetOption {
   icon?: string;
 }
 
-interface BottomSheetConfig {
-  title: string;
-  subtitle?: string;
-  options: SheetOption[];
-  selected: string;
-  onSelect: (value: string) => void;
-}
+const GENDER_OPTIONS: SheetOption[] = [
+  { value: 'Male', label: 'Male', subtitle: 'Standard positions and postures', icon: 'male' },
+  { value: 'Female', label: 'Female', subtitle: 'Adapted posture guidance for women', icon: 'female' },
+];
 
-interface HomeScreenProps {
-  onResetOnboarding?: () => void;
-  navigation?: any;
-}
+const SECT_OPTIONS: SheetOption[] = [
+  { value: 'Sunni', label: 'Sunni', subtitle: 'Includes Hanafi, Shafi’i, Maliki, Hanbali methods', icon: 'mosque' },
+  { value: 'Shia', label: 'Shia', subtitle: 'Ja’fari jurisprudence & recitations', icon: 'star' },
+];
 
-export const HomeScreen: React.FC<HomeScreenProps> = ({ onResetOnboarding, navigation }) => {
-  const insets = useSafeAreaInsets();
+const SUNNI_MADHAB_OPTIONS: SheetOption[] = [
+  { value: 'Hanafi', label: 'Hanafi', subtitle: 'Witr 3 Raka’at, Asr later time calculation', badge: 'Popular' },
+  { value: "Shafi'i", label: "Shafi'i", subtitle: 'Raf-al-Yadayn, Qunut in Fajr prayer', badge: 'Standard' },
+];
+
+const SHIA_MADHAB_OPTIONS: SheetOption[] = [
+  { value: "Ja'fari", label: "Ja'fari", subtitle: 'Combining Dhuhr/Asr & Maghrib/Isha', badge: 'Default' },
+];
+
+
+
+export const HomeScreen: React.FC<{ navigation?: any; onResetOnboarding?: () => void }> = ({ navigation, onResetOnboarding }) => {
   const { i18n } = useTranslation();
   const { isDarkMode, colors } = useTheme();
-  const [lang, setLang] = useState(i18n.language || 'en');
-  const [sidebarVisible, setSidebarVisible] = useState(false);
+  const isFocused = useIsFocused();
 
-  // Preference State
+  React.useEffect(() => {
+    if (isFocused) {
+      RNStatusBar.setBarStyle('light-content', true);
+    }
+  }, [isFocused]);
+
+  // Selected Preferences State
   const [gender, setGender] = useState<Gender>('Male');
   const [sect, setSect] = useState<Sect>('Sunni');
   const [madhab, setMadhab] = useState<Madhab>('Hanafi');
 
-  // Today's Prayer Tracker Log Widget State
-  const [prayerLogs, setPrayerLogs] = useState<Record<string, boolean>>({
-    fajr: true,
-    dhuhr: true,
-    asr: false,
-    maghrib: false,
-    isha: false,
-  });
+  // Modal Sheet State
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalTitle, setModalTitle] = useState('');
+  const [options, setOptions] = useState<SheetOption[]>([]);
+  const [currentType, setCurrentType] = useState<'gender' | 'sect' | 'madhab'>('gender');
 
-  // Bottom Sheet Modal state
-  const [sheetConfig, setSheetConfig] = useState<BottomSheetConfig | null>(null);
-  const [sheetVisible, setSheetVisible] = useState(false);
+  const { openSidebar } = useSidebar();
+
+  // Bottom Sheet Animation
   const slideAnim = useRef(new Animated.Value(0)).current;
-  const backdropAnim = useRef(new Animated.Value(0)).current;
 
-  const isUrdu = lang === 'ur';
-
-  const switchLang = (l: string) => {
-    i18n.changeLanguage(l);
-    setLang(l);
-  };
-
-  const togglePrayerLog = (id: string) => {
-    setPrayerLogs((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
-
-  // Bottom Sheet Handlers
-  const openSheet = (config: BottomSheetConfig) => {
-    setSheetConfig(config);
-    setSheetVisible(true);
-    slideAnim.setValue(0);
-    backdropAnim.setValue(0);
-    Animated.parallel([
-      Animated.spring(slideAnim, { toValue: 1, useNativeDriver: true, tension: 65, friction: 11 }),
-      Animated.timing(backdropAnim, { toValue: 1, duration: 220, useNativeDriver: true }),
-    ]).start();
+  const openSheet = (title: string, sheetOptions: SheetOption[], type: 'gender' | 'sect' | 'madhab') => {
+    setModalTitle(title);
+    setOptions(sheetOptions);
+    setCurrentType(type);
+    setModalVisible(true);
+    Animated.timing(slideAnim, {
+      toValue: 1,
+      duration: 250,
+      useNativeDriver: true,
+    }).start();
   };
 
   const closeSheet = () => {
-    Animated.parallel([
-      Animated.timing(slideAnim, { toValue: 0, duration: 220, useNativeDriver: true }),
-      Animated.timing(backdropAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
-    ]).start(() => {
-      setSheetVisible(false);
-      setSheetConfig(null);
+    Animated.timing(slideAnim, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start(() => {
+      setModalVisible(false);
     });
   };
 
-  const handleSheetSelect = (value: string) => {
-    sheetConfig?.onSelect(value);
+  const handleSelectOption = (value: string) => {
+    if (currentType === 'gender') {
+      setGender(value as Gender);
+    } else if (currentType === 'sect') {
+      const nextSect = value as Sect;
+      setSect(nextSect);
+      if (nextSect === 'Shia') {
+        setMadhab("Ja'fari");
+      } else {
+        setMadhab('Hanafi');
+      }
+    } else if (currentType === 'madhab') {
+      setMadhab(value as Madhab);
+    }
     closeSheet();
   };
 
-  const openGenderPicker = () => {
-    openSheet({
-      title: isUrdu ? 'جنس کا انتخاب کریں' : 'Select Gender',
-      subtitle: isUrdu ? 'نماز کے لیے جنس' : 'Choose male or female posture guidance',
-      options: [
-        { value: 'Male', label: isUrdu ? 'مرد (Male)' : 'Male', subtitle: 'Postures & rulings for men', icon: '♂' },
-        { value: 'Female', label: isUrdu ? 'عورت (Female)' : 'Female', subtitle: 'Postures & rulings for women', icon: '♀' },
-      ],
-      selected: gender,
-      onSelect: (v) => setGender(v as Gender),
-    });
+  const openGenderPicker = () => openSheet('Select Prayer Gender Profile', GENDER_OPTIONS, 'gender');
+  const openSchoolPicker = () => {
+    if (sect === 'Sunni') {
+      openSheet('Select Sunni School of Thought (Madhab)', SUNNI_MADHAB_OPTIONS, 'madhab');
+    } else {
+      openSheet('Select Shia Jurisprudence', SHIA_MADHAB_OPTIONS, 'madhab');
+    }
   };
 
-  const openSchoolPicker = () => {
-    openSheet({
-      title: isUrdu ? 'فقہ و مذہب کا انتخاب' : 'Select School & Sect',
-      subtitle: isUrdu ? 'اپنے فقہ کی ترویج منتخب کریں' : 'Choose your juristic school for variations',
-      options: [
-        { value: 'Sunni__Hanafi', label: 'Sunni · Hanafi', subtitle: 'Imam Abu Hanifa rulings' },
-        { value: 'Sunni__Shafi\'i', label: 'Sunni · Shafi\'i', subtitle: 'Imam Al-Shafi\'i rulings' },
-        { value: 'Shia__Ja\'fari', label: 'Shia · Ja\'fari', subtitle: 'Imam Ja\'far Al-Sadiq rulings' },
-      ],
-      selected: `${sect}__${madhab}`,
-      onSelect: (v) => {
-        const [s, m] = v.split('__') as [Sect, Madhab];
-        setSect(s);
-        setMadhab(m);
-      },
-    });
+  // Prayer Tracker Checkmarks State
+  const [prayerLogs, setPrayerLogs] = useState<Record<string, boolean>>({
+    Fajr: true,
+    Dhuhr: true,
+    Asr: false,
+    Maghrib: false,
+    Isha: false,
+  });
+
+  const togglePrayerLog = (name: string) => {
+    setPrayerLogs((prev) => ({ ...prev, [name]: !prev[name] }));
   };
+
+  const isUrdu = i18n.language === 'ur';
 
   const translateY = slideAnim.interpolate({
     inputRange: [0, 1],
@@ -155,22 +161,30 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onResetOnboarding, navig
 
   const completedCount = Object.values(prayerLogs).filter(Boolean).length;
 
-  const topHeaderColor = isDarkMode ? '#1E3A8A' : '#1E40AF';
+  const mainScrollRef = useRef<ScrollView>(null);
+  useScrollToTop(mainScrollRef);
+
+  React.useEffect(() => {
+    if (isFocused) {
+      mainScrollRef.current?.scrollTo({ y: 0, animated: false });
+    }
+  }, [isFocused]);
 
   return (
-    <SafeAreaView style={[styles.root, { backgroundColor: topHeaderColor }]} edges={['top', 'left', 'right']}>
-      <StatusBar style="light" backgroundColor={topHeaderColor} translucent={false} />
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
+      {isFocused && <StatusBar style="light" backgroundColor="transparent" translucent={true} animated={true} />}
 
       <View style={{ flex: 1, backgroundColor: colors.background }}>
         <ScrollView
+          ref={mainScrollRef}
           style={styles.scroll}
           contentContainerStyle={[styles.scrollContent, { paddingBottom: 100 }]}
           showsVerticalScrollIndicator={false}
         >
           {/* Header Banner (Preserved at Top) */}
           <HeaderBanner
-            onOpenSidebar={() => setSidebarVisible(true)}
-            lang={lang}
+            onOpenSidebar={openSidebar}
+            lang={i18n.language}
           />
 
           {/* ── Islamic Preference Quick Selection Bar */}
@@ -205,235 +219,237 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onResetOnboarding, navig
             </View>
           </View>
 
-          {/* Continue Learning Widget (Nudge to Learn Tab) */}
+          {/* ── Step-by-Step Prayer & Salah Guide Banner (Matching Reference UI) */}
           <TouchableOpacity
             activeOpacity={0.88}
-            onPress={() => navigation?.navigate?.('Learn')}
+            onPress={() => navigation?.navigate?.('Ibadaat')}
             style={localStyles.continueContainer}
           >
-            <LinearGradient
-              colors={
-                isDarkMode
-                  ? ['#1E3A8A', '#1D4ED8', '#2563EB']
-                  : ['#1B4D3E', '#2D6A4F', '#40916C']
-              }
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={localStyles.continueLearnGradient}
+            <ImageBackground
+              source={salahQuranBg}
+              style={localStyles.salahGuideBg}
+              imageStyle={{ borderRadius: 20 }}
             >
-              {/* Top Row: Badge + Directional Arrow */}
-              <View style={localStyles.continueHeaderRow}>
-                <View style={localStyles.learnBadge}>
-                  <MaterialCommunityIcons name="school-outline" size={13} color="#FFFFFF" style={{ marginRight: 5 }} />
-                  <Text style={localStyles.learnBadgeText}>
-                    {isUrdu ? 'لرننگ اکیڈمی' : 'STEP-BY-STEP ACADEMY'}
-                  </Text>
+              <LinearGradient
+                colors={[
+                  'rgba(27, 62, 43, 0.96)',
+                  'rgba(27, 62, 43, 0.65)',
+                  'rgba(27, 62, 43, 0.15)',
+                ]}
+                start={{ x: 0, y: 1 }}
+                end={{ x: 1, y: 0.5 }}
+                style={localStyles.continueLearnGradient}
+              >
+
+                {/* Top Row: Badge + Directional Arrow */}
+                <View style={localStyles.continueHeaderRow}>
+                  <View style={localStyles.learnBadge}>
+                    <FontAwesome5 name="graduation-cap" size={11} color="#FFFFFF" style={{ marginRight: 6 }} />
+                    <Text style={localStyles.learnBadgeText}>
+                      {isUrdu ? 'لرننگ اکیڈمی' : 'STEP-BY-STEP ACADEMY'}
+                    </Text>
+                  </View>
+
+                  <View style={localStyles.arrowCircle}>
+                    <Ionicons name="arrow-forward" size={18} color="#1B3E2B" />
+                  </View>
                 </View>
 
-                <View style={localStyles.arrowCircle}>
-                  <Ionicons name="arrow-forward" size={15} color={isDarkMode ? '#1E3A8A' : '#1B4D3E'} />
-                </View>
-              </View>
+                {/* Main Content & Illustration */}
+                <View style={localStyles.continueMainContent}>
+                  <View style={{ flex: 1, paddingRight: 14 }}>
+                    <Text style={localStyles.continueTitle}>
+                      {isUrdu ? 'طریقۂ نماز کا مکمل سبق' : 'Step-by-Step Prayer & Salah Guide'}
+                    </Text>
+                    <Text style={localStyles.continueSub}>
+                      {isUrdu ? 'مقدمات، وضو اور نماز کے فرائض و سنن سیکھیں' : 'Learn Raka\'at, positional recitations, prerequisites, and purification steps in Learn Hub'}
+                    </Text>
+                  </View>
 
-              {/* Main Content & Illustration */}
-              <View style={localStyles.continueMainContent}>
-                <View style={{ flex: 1, paddingRight: 10 }}>
-                  <Text style={localStyles.continueTitle}>
-                    {isUrdu ? 'طریقۂ نماز کا مکمل سبق' : 'Step-by-Step Namaz & Wuzu Guide'}
-                  </Text>
-                  <Text style={localStyles.continueSub}>
-                    {isUrdu ? 'مقدمات، وضو اور نماز کے فرائض و سنن سیکھیں' : 'Master posture recitations, Faraiz & purification rules in Learn Hub'}
-                  </Text>
+                  <View style={localStyles.illustrationCircle}>
+                    <MaterialCommunityIcons name="book-open-page-variant" size={26} color="#FFFFFF" />
+                  </View>
                 </View>
-
-                <View style={localStyles.illustrationCircle}>
-                  <MaterialCommunityIcons name="book-open-page-variant" size={26} color="#FFFFFF" />
-                </View>
-              </View>
-            </LinearGradient>
+              </LinearGradient>
+            </ImageBackground>
           </TouchableOpacity>
 
-          {/* Compact Quick Anchor Cards (Qibla & Tasbeeh with Corner Decoration) */}
-          <View style={localStyles.anchorsRow}>
-            {/* Qibla Direction Anchor */}
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() => navigation?.navigate?.('Qibla')}
-              style={[localStyles.anchorCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
-            >
-              <CardCornerDecoration color={colors.gold} size={34} offset={2} />
-              <View style={[localStyles.anchorIconCircle, { backgroundColor: colors.gold + '1A' }]}>
-                <MaterialCommunityIcons name="compass-rose" size={26} color={colors.gold} />
-              </View>
-              <Text style={[localStyles.anchorTitle, { color: colors.textPrimary }]}>Qibla Direction</Text>
-              <Text style={[localStyles.anchorSub, { color: colors.textSecondary }]}>Live Kaaba Compass</Text>
-            </TouchableOpacity>
-
-            {/* Digital Tasbeeh Anchor */}
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() => navigation?.navigate?.('More')}
-              style={[localStyles.anchorCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
-            >
-              <CardCornerDecoration color={colors.primary} size={34} offset={2} />
-              <View style={[localStyles.anchorIconCircle, { backgroundColor: colors.primary + '1A' }]}>
-                <MaterialCommunityIcons name="counter" size={26} color={colors.primary} />
-              </View>
-              <Text style={[localStyles.anchorTitle, { color: colors.textPrimary }]}>Digital Tasbeeh</Text>
-              <Text style={[localStyles.anchorSub, { color: colors.textSecondary }]}>Dhikr & Counter</Text>
-            </TouchableOpacity>
+          {/* Quick Access Grid */}
+          <View style={[localStyles.quickAccessCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={[localStyles.quickAccessTitle, { color: colors.textPrimary }]}>Quick Access</Text>
+            <View style={localStyles.quickAccessGrid}>
+              <TouchableOpacity
+                style={[localStyles.quickAccessItem, { backgroundColor: colors.surfaceSecondary }]}
+                onPress={() => navigation?.navigate?.('Ibadaat')}
+              >
+                <MaterialCommunityIcons name="mosque" size={24} color={colors.primary} />
+                <Text style={[localStyles.quickAccessLabel, { color: colors.textPrimary }]}>Step by Step Namaz</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[localStyles.quickAccessItem, { backgroundColor: colors.surfaceSecondary }]}
+                onPress={() => navigation?.navigate?.('Learn')}
+              >
+                <Ionicons name="water" size={24} color="#0284C7" />
+                <Text style={[localStyles.quickAccessLabel, { color: colors.textPrimary }]}>Wuzu</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[localStyles.quickAccessItem, { backgroundColor: colors.surfaceSecondary }]}
+                onPress={() => navigation?.navigate?.('PrayerTimes')}
+              >
+                <Ionicons name="time" size={24} color="#D97706" />
+                <Text style={[localStyles.quickAccessLabel, { color: colors.textPrimary }]}>Prayer Times</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
-          {/* Today's 5-Prayer Tracker Mini Log Widget */}
+          {/* Today's Prayer Tracker */}
           <View style={[localStyles.trackerCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={localStyles.trackerHeaderRow}>
               <View style={localStyles.trackerTitleGroup}>
-                <MaterialCommunityIcons name="calendar-check" size={20} color={colors.primary} style={{ marginRight: 6 }} />
-                <Text style={[localStyles.trackerTitle, { color: colors.textPrimary }]}>
-                  {isUrdu ? 'آج کی نماز کا جائزہ' : "Today's Prayer Tracker"}
-                </Text>
+                <Ionicons name="calendar" size={18} color={colors.primary} style={{ marginRight: 6 }} />
+                <Text style={[localStyles.trackerTitle, { color: colors.textPrimary }]}>Today's Prayer Tracker</Text>
               </View>
-              <View style={[localStyles.trackerProgressPill, { backgroundColor: colors.surfaceSecondary }]}>
+              <View style={[localStyles.trackerProgressPill, { backgroundColor: colors.primary + '18' }]}>
                 <Text style={[localStyles.trackerProgressText, { color: colors.primary }]}>{completedCount}/5 Logged</Text>
               </View>
             </View>
 
             <View style={localStyles.prayerPillsRow}>
-              {[
-                { id: 'fajr', name: 'Fajr', time: '05:00 AM' },
-                { id: 'dhuhr', name: 'Dhuhr', time: '12:30 PM' },
-                { id: 'asr', name: 'Asr', time: '04:30 PM' },
-                { id: 'maghrib', name: 'Maghrib', time: '06:40 PM' },
-                { id: 'isha', name: 'Isha', time: '08:00 PM' },
-              ].map((p) => {
-                const isChecked = prayerLogs[p.id];
+              {['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'].map((pName) => {
+                const isLogged = prayerLogs[pName];
                 return (
                   <TouchableOpacity
-                    key={p.id}
-                    activeOpacity={0.75}
-                    onPress={() => togglePrayerLog(p.id)}
+                    key={pName}
+                    activeOpacity={0.8}
+                    onPress={() => togglePrayerLog(pName)}
                     style={[
                       localStyles.prayerLogItem,
-                      isChecked
-                        ? { backgroundColor: colors.primary, borderColor: colors.primary }
-                        : { backgroundColor: colors.surfaceSecondary, borderColor: colors.border },
+                      {
+                        backgroundColor: isLogged ? colors.primary : colors.surfaceSecondary,
+                        borderColor: isLogged ? colors.primary : colors.border,
+                      },
                     ]}
                   >
                     <Ionicons
-                      name={isChecked ? 'checkmark-circle' : 'ellipse-outline'}
-                      size={16}
-                      color={isChecked ? '#FFFFFF' : colors.textSecondary}
+                      name={isLogged ? 'checkmark-circle' : 'ellipse-outline'}
+                      size={15}
+                      color={isLogged ? '#FFFFFF' : colors.textSecondary}
                     />
                     <Text
                       style={[
                         localStyles.prayerLogText,
-                        { color: isChecked ? '#FFFFFF' : colors.textPrimary },
-                        isChecked && { fontWeight: '800' },
+                        { color: isLogged ? '#FFFFFF' : colors.textPrimary },
                       ]}
                     >
-                      {p.name}
+                      {pName}
                     </Text>
                   </TouchableOpacity>
                 );
               })}
             </View>
           </View>
-
-          {/* Islamic Quote of the Day */}
-          <View style={[localStyles.quoteCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <CardCornerDecoration color={colors.gold} size={36} offset={2} />
-            <View style={localStyles.quoteHeaderRow}>
-              <MaterialCommunityIcons name="format-quote-open" size={24} color={colors.gold} />
-              <Text style={[localStyles.quoteTag, { color: colors.gold }]}>DAILY ISLAMIC REMINDER</Text>
-            </View>
-            <Text style={[localStyles.quoteText, { color: colors.textPrimary }]}>
-              "Indeed, prayer prohibits immorality and wrongdoing, and the remembrance of Allah is greater."
-            </Text>
-            <Text style={[localStyles.quoteRef, { color: colors.textSecondary }]}>— Surah Al-Ankabut [29:45]</Text>
-          </View>
         </ScrollView>
+      </View>
 
-        {/* Sidebar Drawer */}
-        <SidebarDrawer
-          visible={sidebarVisible}
-          onClose={() => setSidebarVisible(false)}
-          lang={lang}
-          onSwitchLang={switchLang}
-        />
-
-        {/* Preferences Bottom Sheet Modal */}
-        <Modal
-          visible={sheetVisible}
-          transparent={true}
-          animationType="none"
-          onRequestClose={closeSheet}
-        >
-          <Pressable style={localStyles.sheetBackdrop} onPress={closeSheet}>
-            <Animated.View style={[localStyles.sheetBackdropFill, { opacity: backdropAnim }]} />
-          </Pressable>
-
+      {/* ── Preference Selection Bottom Sheet Modal */}
+      <Modal
+        transparent
+        visible={modalVisible}
+        onRequestClose={closeSheet}
+        animationType="none"
+      >
+        <Pressable style={localStyles.modalBackdrop} onPress={closeSheet}>
           <Animated.View
             style={[
               localStyles.sheetCard,
               {
-                backgroundColor: colors.surface,
-                borderColor: colors.border,
+                backgroundColor: isDarkMode ? '#1E293B' : '#FFFFFF',
                 transform: [{ translateY }],
               },
             ]}
           >
-            <View style={localStyles.sheetHandleBar} />
-            {sheetConfig && (
-              <>
-                <Text style={[localStyles.sheetTitle, { color: colors.textPrimary }]}>{sheetConfig.title}</Text>
-                {sheetConfig.subtitle && (
-                  <Text style={[localStyles.sheetSubtitle, { color: colors.textSecondary }]}>{sheetConfig.subtitle}</Text>
-                )}
-                <View style={localStyles.sheetOptionsList}>
-                  {sheetConfig.options.map((opt) => {
-                    const isSel = sheetConfig.selected === opt.value;
-                    return (
-                      <TouchableOpacity
-                        key={opt.value}
-                        activeOpacity={0.7}
-                        onPress={() => handleSheetSelect(opt.value)}
-                        style={[
-                          localStyles.sheetOptionRow,
-                          { backgroundColor: isSel ? colors.surfaceSecondary : 'transparent' },
-                        ]}
-                      >
-                        <View style={{ flex: 1 }}>
-                          <Text style={[localStyles.sheetOptLabel, { color: isSel ? colors.primary : colors.textPrimary }]}>
-                            {opt.label}
-                          </Text>
-                          {opt.subtitle && (
-                            <Text style={[localStyles.sheetOptSub, { color: colors.textSecondary }]}>{opt.subtitle}</Text>
-                          )}
-                        </View>
-                        {isSel && <Ionicons name="checkmark-circle" size={20} color={colors.primary} />}
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              </>
-            )}
+            <View style={localStyles.sheetHeader}>
+              <View style={localStyles.dragHandle} />
+              <Text style={[localStyles.sheetTitle, { color: colors.textPrimary }]}>{modalTitle}</Text>
+            </View>
+
+            <ScrollView style={{ maxHeight: 320 }} showsVerticalScrollIndicator={false}>
+              {options.map((opt) => {
+                const isSelected =
+                  (currentType === 'gender' && gender === opt.value) ||
+                  (currentType === 'sect' && sect === opt.value) ||
+                  (currentType === 'madhab' && madhab === opt.value);
+
+                return (
+                  <TouchableOpacity
+                    key={opt.value}
+                    activeOpacity={0.7}
+                    onPress={() => handleSelectOption(opt.value)}
+                    style={[
+                      localStyles.optionItem,
+                      {
+                        backgroundColor: isSelected
+                          ? colors.primary + '15'
+                          : isDarkMode
+                            ? '#0F172A'
+                            : '#F8FAFC',
+                        borderColor: isSelected ? colors.primary : colors.border,
+                      },
+                    ]}
+                  >
+                    <View style={localStyles.optionTextGroup}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Text
+                          style={[
+                            localStyles.optionLabel,
+                            { color: isSelected ? colors.primary : colors.textPrimary },
+                          ]}
+                        >
+                          {opt.label}
+                        </Text>
+                        {opt.badge && (
+                          <View style={[localStyles.optBadge, { backgroundColor: colors.primary + '20' }]}>
+                            <Text style={[localStyles.optBadgeText, { color: colors.primary }]}>{opt.badge}</Text>
+                          </View>
+                        )}
+                      </View>
+                      {opt.subtitle && (
+                        <Text style={[localStyles.optionSub, { color: colors.textSecondary }]}>
+                          {opt.subtitle}
+                        </Text>
+                      )}
+                    </View>
+
+                    {isSelected && <Ionicons name="checkmark-circle" size={20} color={colors.primary} />}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={closeSheet}
+              style={[localStyles.closeBtn, { backgroundColor: colors.surfaceSecondary }]}
+            >
+              <Text style={[localStyles.closeBtnText, { color: colors.textPrimary }]}>Done</Text>
+            </TouchableOpacity>
           </Animated.View>
-        </Modal>
-      </View>
-    </SafeAreaView>
+        </Pressable>
+      </Modal>
+    </View>
   );
 };
 
 const localStyles = StyleSheet.create({
   prefContainer: {
-    marginHorizontal: 16,
-    marginTop: 12,
-    marginBottom: 4,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 4,
   },
   prefTitle: {
     fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.4,
+    fontWeight: '800',
+    letterSpacing: 0.5,
     marginBottom: 6,
     textTransform: 'uppercase',
   },
@@ -442,12 +458,11 @@ const localStyles = StyleSheet.create({
     gap: 8,
   },
   prefPill: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 10,
-    paddingVertical: 7,
-    borderRadius: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
     borderWidth: 1,
   },
   prefIconCircle: {
@@ -459,22 +474,21 @@ const localStyles = StyleSheet.create({
     marginRight: 6,
   },
   prefText: {
-    flex: 1,
     fontSize: 12,
     fontWeight: '700',
   },
 
-  // Continue Learn
+  // Step-by-Step Prayer Guide Card (Matching Reference UI)
   continueContainer: {
     marginHorizontal: 16,
-    marginTop: 10,
+    marginTop: 12,
     borderRadius: 20,
     overflow: 'hidden',
     ...Platform.select({
       ios: {
-        shadowColor: '#1B4D3E',
+        shadowColor: '#1B3E2B',
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.18,
+        shadowOpacity: 0.22,
         shadowRadius: 10,
       },
       android: {
@@ -482,105 +496,113 @@ const localStyles = StyleSheet.create({
       },
     }),
   },
+  salahGuideBg: {
+    width: '100%',
+    minHeight: 165,
+  },
   continueLearnGradient: {
     padding: 16,
     borderRadius: 20,
+    minHeight: 165,
+    justifyContent: 'space-between',
+    position: 'relative',
+    overflow: 'hidden',
   },
   continueHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: 8,
+    zIndex: 2,
   },
   learnBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.16)',
+    paddingHorizontal: 11,
+    paddingVertical: 5,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   learnBadgeText: {
     color: '#FFFFFF',
     fontSize: 10,
-    fontWeight: '900',
+    fontWeight: '800',
     letterSpacing: 0.6,
   },
   arrowCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
   },
   continueMainContent: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     justifyContent: 'space-between',
+    zIndex: 2,
+    marginTop: 4,
   },
   continueTitle: {
-    fontSize: 16,
+    fontSize: 19,
     fontWeight: '900',
     color: '#FFFFFF',
-    letterSpacing: 0.2,
+    letterSpacing: -0.3,
+    lineHeight: 24,
   },
   continueSub: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.85)',
-    marginTop: 4,
-    lineHeight: 17,
+    fontSize: 11.5,
+    color: 'rgba(255, 255, 255, 0.92)',
+    marginTop: 6,
+    lineHeight: 16,
+    fontWeight: '500',
   },
   illustrationCircle: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.35)',
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.38)',
   },
 
-  // Anchor Cards
-  anchorsRow: {
-    flexDirection: 'row',
+  // Quick Access
+  quickAccessCard: {
     marginHorizontal: 16,
     marginTop: 10,
-    gap: 10,
-  },
-  anchorCard: {
-    flex: 1,
     borderRadius: 16,
-    borderWidth: 1,
-    padding: 14,
-    alignItems: 'center',
-    position: 'relative',
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 2,
+    borderWidth: 1.5,
+    padding: 16,
   },
-  anchorIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  anchorTitle: {
-    fontSize: 14,
+  quickAccessTitle: {
+    fontSize: 16,
     fontWeight: '800',
-    textAlign: 'center',
+    marginBottom: 12,
   },
-  anchorSub: {
-    fontSize: 11,
-    marginTop: 2,
+  quickAccessGrid: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  quickAccessItem: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 16,
+    borderRadius: 12,
+    gap: 8,
+  },
+  quickAccessLabel: {
+    fontSize: 12,
+    fontWeight: '700',
     textAlign: 'center',
   },
 
@@ -634,89 +656,73 @@ const localStyles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // Quote
-  quoteCard: {
-    marginHorizontal: 16,
-    marginTop: 10,
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 14,
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  quoteHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 6,
-  },
-  quoteTag: {
-    fontSize: 10,
-    fontWeight: '900',
-    letterSpacing: 0.6,
-  },
-  quoteText: {
-    fontSize: 13,
-    fontStyle: 'italic',
-    lineHeight: 19,
-  },
-  quoteRef: {
-    fontSize: 11,
-    marginTop: 6,
-    fontWeight: '600',
-  },
-
-  // Bottom Sheet Modal
-  sheetBackdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  sheetBackdropFill: {
+  // Sheet Modal
+  modalBackdrop: {
     flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
   },
   sheetCard: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    borderTopWidth: 1,
-    padding: 16,
-    paddingBottom: Platform.OS === 'ios' ? 36 : 20,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 24,
   },
-  sheetHandleBar: {
-    width: 38,
+  sheetHeader: {
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  dragHandle: {
+    width: 36,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#CCC',
-    alignSelf: 'center',
-    marginBottom: 12,
+    backgroundColor: '#CBD5E1',
+    marginBottom: 10,
   },
   sheetTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '800',
   },
-  sheetSubtitle: {
-    fontSize: 12,
-    marginTop: 2,
-    marginBottom: 12,
-  },
-  sheetOptionsList: {
-    gap: 4,
-  },
-  sheetOptionRow: {
+  optionItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 8,
   },
-  sheetOptLabel: {
+  optionTextGroup: {
+    flex: 1,
+  },
+  optionLabel: {
     fontSize: 14,
     fontWeight: '700',
   },
-  sheetOptSub: {
+  optBadge: {
+    marginLeft: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  optBadgeText: {
+    fontSize: 9,
+    fontWeight: '800',
+  },
+  optionSub: {
     fontSize: 11,
-    marginTop: 1,
+    marginTop: 2,
+  },
+  closeBtn: {
+    marginTop: 10,
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  closeBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
   },
 });

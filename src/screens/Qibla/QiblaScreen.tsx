@@ -17,7 +17,7 @@ import { Ionicons, FontAwesome6, MaterialCommunityIcons } from '@expo/vector-ico
 import * as Location from 'expo-location';
 import { Magnetometer } from 'expo-sensors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useTheme } from '../../context/ThemeContext';
+import { useTheme } from '../../store/hooks';
 import {
   calculateQiblaDirection,
   calculateDistanceToMakkah,

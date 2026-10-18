@@ -9,7 +9,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../store/hooks';
 
 export const CustomBottomTabBar: React.FC<BottomTabBarProps> = ({
   state,
@@ -73,7 +73,19 @@ export const CustomBottomTabBar: React.FC<BottomTabBarProps> = ({
           } else if (route.name === 'Ibadaat') {
             return <MaterialCommunityIcons name={focused ? "mosque" : "mosque"} size={size} color={iconColor} />;
           } else if (route.name === 'More') {
-            return <Ionicons name={focused ? "ellipsis-horizontal" : "ellipsis-horizontal-circle-outline"} size={size} color={iconColor} />;
+            return (
+              <View style={{ position: 'relative', alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name={focused ? "ellipsis-horizontal" : "ellipsis-horizontal-circle-outline"} size={size} color={iconColor} />
+                <View
+                  style={[
+                    styles.lockBadge,
+                    { backgroundColor: focused ? (isDarkMode ? '#D4AF37' : '#FFFFFF') : (isDarkMode ? '#F59E0B' : '#EF4444') }
+                  ]}
+                >
+                  <Ionicons name="lock-closed" size={7} color={focused ? (isDarkMode ? '#121212' : '#1E40AF') : '#FFFFFF'} />
+                </View>
+              </View>
+            );
           }
           return null;
         };
@@ -196,5 +208,20 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: 2,
     letterSpacing: 0.1,
+  },
+  lockBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -7,
+    width: 13,
+    height: 13,
+    borderRadius: 6.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
   },
 });

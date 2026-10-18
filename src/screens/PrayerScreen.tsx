@@ -12,14 +12,26 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { PrayerPlayer, PrayerData } from '../components/PrayerPlayer';
 import { PrayerSimulation } from '../components/PrayerSimulation';
-import { useTheme } from '../context/ThemeContext';
+import { useTheme } from '../store/hooks';
 
 const fajrData: PrayerData = require('../data/fajrPrayer.json');
+const zuhrData: PrayerData = require('../data/zuhrFardPrayer.json');
+const asrData: PrayerData = require('../data/asrFardPrayer.json');
+const maghribData: PrayerData = require('../data/maghribFardPrayer.json');
+const ishaData: PrayerData = require('../data/ishaFardPrayer.json');
+const PRAYER_DATA_MAP: Record<string, PrayerData> = {
+  fajr: fajrData,
+  dhuhr: zuhrData,
+  zuhr: zuhrData,
+  asr: asrData,
+  maghrib: maghribData,
+  isha: ishaData,
+};
 
 export const PrayerScreen = ({ navigation, route }: any) => {
   const { isDarkMode, colors } = useTheme();
-  const prayerId = route?.params?.prayerId || 'fajr';
-  const prayerData = fajrData; // TODO: Load different prayer data based on prayerId
+  const prayerId = (route?.params?.prayerId || 'fajr').toLowerCase();
+  const prayerData: PrayerData = PRAYER_DATA_MAP[prayerId] || fajrData;
   const [activeTab, setActiveTab] = useState<'guided' | 'simulation'>('guided');
 
   const handleBack = () => {
@@ -132,9 +144,18 @@ export const PrayerScreen = ({ navigation, route }: any) => {
       {/* Tab Content View */}
       <View style={styles.tabContent}>
         {activeTab === 'guided' ? (
-          <PrayerPlayer prayerData={prayerData} onBack={handleBack} hideHeader={true} />
+          <PrayerPlayer
+            key={`player_${prayerData.prayer_id}`}
+            prayerData={prayerData}
+            onBack={handleBack}
+            hideHeader={true}
+          />
         ) : (
-          <PrayerSimulation prayerData={prayerData} onBack={handleBack} />
+          <PrayerSimulation
+            key={`sim_${prayerData.prayer_id}`}
+            prayerData={prayerData}
+            onBack={handleBack}
+          />
         )}
       </View>
     </SafeAreaView>

@@ -8,13 +8,97 @@ import {
   Platform,
   Modal,
   TextInput,
+  ImageBackground,
+  FlatList,
+  ActivityIndicator,
+  StatusBar as RNStatusBar,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useIsFocused, useScrollToTop } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
+import Svg, { Path, Circle, Defs, LinearGradient as SvgGradient, Stop, Rect } from 'react-native-svg';
+import * as Location from 'expo-location';
 
-import { useTheme } from '../../context/ThemeContext';
+import { useTheme, useSidebar, usePrayerTimes } from '../../store/hooks';
+import { format24To12 } from '../../services/aladhanService';
+import majorCities from '../../data/majorCities.json';
+
+// Background Image Artworks for Challenges
+const starterBg = require('../../assets/images/challenge_starter_bg.jpg');
+const fortressBg = require('../../assets/images/challenge_fortress_bg.jpg');
+const championBg = require('../../assets/images/challenge_champion_bg.jpg');
+
+// Custom Professional SVG Badge Icons for Challenges
+const StarterSvgIcon: React.FC<{ size?: number }> = ({ size = 20 }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Defs>
+      <SvgGradient id="starterGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <Stop offset="0%" stopColor="#FBBF24" />
+        <Stop offset="100%" stopColor="#F59E0B" />
+      </SvgGradient>
+    </Defs>
+    <Path
+      d="M13 2L3 14H12L11 22L21 10H12L13 2Z"
+      fill="url(#starterGrad)"
+      stroke="#D97706"
+      strokeWidth="1"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+const ShieldSvgIcon: React.FC<{ size?: number }> = ({ size = 20 }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Defs>
+      <SvgGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <Stop offset="0%" stopColor="#60A5FA" />
+        <Stop offset="100%" stopColor="#2563EB" />
+      </SvgGradient>
+    </Defs>
+    <Path
+      d="M12 2L4 5V11C4 16.55 7.4 21.74 12 23C16.6 21.74 20 16.55 20 11V5L12 2Z"
+      fill="url(#shieldGrad)"
+      stroke="#1D4ED8"
+      strokeWidth="1.2"
+    />
+    <Path
+      d="M12 7L13.2 9.8L16.2 10.1L13.9 12.1L14.6 15L12 13.5L9.4 15L10.1 12.1L7.8 10.1L10.8 9.8L12 7Z"
+      fill="#FFFFFF"
+      opacity="0.9"
+    />
+  </Svg>
+);
+
+const CrownSvgIcon: React.FC<{ size?: number }> = ({ size = 20 }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Defs>
+      <SvgGradient id="crownGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <Stop offset="0%" stopColor="#F59E0B" />
+        <Stop offset="100%" stopColor="#D4AF37" />
+      </SvgGradient>
+    </Defs>
+    <Path
+      d="M3 18L1 6L7 10L12 3L17 10L23 6L21 18H3Z"
+      fill="url(#crownGrad)"
+      stroke="#B45309"
+      strokeWidth="1"
+      strokeLinejoin="round"
+    />
+    <Circle cx="12" cy="4" r="1.5" fill="#FEF08A" />
+    <Circle cx="1" cy="7" r="1.2" fill="#FEF08A" />
+    <Circle cx="23" cy="7" r="1.2" fill="#FEF08A" />
+    <Rect x="4" y="15.5" width="16" height="2" rx="1" fill="#FEF08A" opacity="0.8" />
+  </Svg>
+);
+
+const CustomPlusSvgIcon: React.FC<{ size?: number; color?: string }> = ({ size = 20, color = '#2563EB' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="12" r="9" stroke={color} strokeWidth="2" strokeDasharray="3 2" />
+    <Path d="M12 7V17M7 12H17" stroke={color} strokeWidth="2.5" strokeLinecap="round" />
+  </Svg>
+);
 
 interface PrayerItem {
   id: string;
@@ -22,17 +106,22 @@ interface PrayerItem {
   nameUr: string;
   timeDisplay: string;
   icon: string;
-  minutes: number;
 }
 
-const DAILY_PRAYERS: PrayerItem[] = [
-  { id: 'fajr', nameEn: 'Fajr', nameUr: 'فجر', timeDisplay: '05:00 am', icon: 'weather-sunset-up', minutes: 5 * 60 },
-  { id: 'sunrise', nameEn: 'Sunrise', nameUr: 'طلوعِ آفتاب', timeDisplay: '06:15 am', icon: 'weather-sunny', minutes: 6 * 60 + 15 },
-  { id: 'dhuhr', nameEn: 'Dhuhr', nameUr: 'ظہر', timeDisplay: '12:30 pm', icon: 'weather-sunny-alert', minutes: 12 * 60 + 30 },
-  { id: 'asr', nameEn: 'Asr', nameUr: 'عصر', timeDisplay: '04:30 pm', icon: 'weather-partly-cloudy', minutes: 16 * 60 + 30 },
-  { id: 'maghrib', nameEn: 'Maghrib', nameUr: 'مغرب', timeDisplay: '06:40 pm', icon: 'weather-sunset-down', minutes: 18 * 60 + 40 },
-  { id: 'isha', nameEn: 'Isha', nameUr: 'عشاء', timeDisplay: '08:00 pm', icon: 'weather-night', minutes: 20 * 60 },
+const PRAYER_META: Omit<PrayerItem, 'timeDisplay'>[] = [
+  { id: 'fajr', nameEn: 'Fajr', nameUr: 'فجر', icon: 'weather-sunset-up' },
+  { id: 'sunrise', nameEn: 'Sunrise', nameUr: 'طلوعِ آفتاب', icon: 'weather-sunny' },
+  { id: 'dhuhr', nameEn: 'Dhuhr', nameUr: 'ظہر', icon: 'weather-sunny-alert' },
+  { id: 'asr', nameEn: 'Asr', nameUr: 'عصر', icon: 'weather-partly-cloudy' },
+  { id: 'maghrib', nameEn: 'Maghrib', nameUr: 'مغرب', icon: 'weather-sunset-down' },
+  { id: 'isha', nameEn: 'Isha', nameUr: 'عشاء', icon: 'weather-night' },
 ];
+
+// AlAdhan timing key map
+const TIMING_KEYS: Record<string, string> = {
+  fajr: 'Fajr', sunrise: 'Sunrise', dhuhr: 'Dhuhr',
+  asr: 'Asr', maghrib: 'Maghrib', isha: 'Isha',
+};
 
 export interface Challenge {
   id: string;
@@ -40,7 +129,9 @@ export interface Challenge {
   daysTotal: number;
   prayersTotal: number;
   badge: string;
-  emoji: string;
+  iconType: 'starter' | 'shield' | 'crown' | 'custom';
+  bgImage?: any;
+  gradientColors: [string, string];
   description: string;
   isCustom?: boolean;
 }
@@ -51,27 +142,33 @@ const PREDEFINED_CHALLENGES: Challenge[] = [
     title: 'Istiqamah Starter',
     daysTotal: 1,
     prayersTotal: 5,
-    badge: '⚡ STARTER',
-    emoji: '⚡',
-    description: 'Complete all 5 daily prayers today on time to ignite your habit.',
+    badge: 'STARTER',
+    iconType: 'starter',
+    bgImage: starterBg,
+    gradientColors: ['#FFF7ED', '#FFEDD5'],
+    description: '1 Day • 5 Prayers',
   },
   {
     id: '3_day',
     title: 'Al-Muhafiz Fortress',
     daysTotal: 3,
     prayersTotal: 15,
-    badge: '🛡️ MUHAFIZ',
-    emoji: '🛡️',
-    description: 'Guard your daily prayers consistently for 3 consecutive days.',
+    badge: 'FORTRESS',
+    iconType: 'shield',
+    bgImage: fortressBg,
+    gradientColors: ['#EFF6FF', '#DBEAFE'],
+    description: '3 Days • 15 Prayers',
   },
   {
     id: '7_day',
     title: 'As-Salah Champion',
     daysTotal: 7,
     prayersTotal: 35,
-    badge: '👑 CHAMPION',
-    emoji: '👑',
-    description: 'Master 7 full days of unbroken Namaz discipline & track your streak.',
+    badge: 'CHAMPION',
+    iconType: 'crown',
+    bgImage: championBg,
+    gradientColors: ['#FEFCE8', '#FEF08A'],
+    description: '7 Days • 35 Prayers',
   },
 ];
 
@@ -82,15 +179,27 @@ interface PrayerTimesScreenProps {
 export const PrayerTimesScreen: React.FC<PrayerTimesScreenProps> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const { isDarkMode, colors } = useTheme();
+  const { openSidebar } = useSidebar();
+  const {
+    locationPref,
+    selectedDateData,
+    dayOffset,
+    setDayOffset,
+    isLoading,
+    activeStatus,
+    updateLocation,
+    refreshTimings,
+  } = usePrayerTimes();
 
-  // Date navigation state (0 = Today, -1 = Yesterday, +1 = Tomorrow)
-  const [dayOffset, setDayOffset] = useState(0);
+  // City selector modal state
+  const [cityModalVisible, setCityModalVisible] = useState(false);
+  const [citySearch, setCitySearch] = useState('');
 
   // Modals state
   const [historyVisible, setHistoryVisible] = useState(false);
   const [createModalVisible, setCreateModalVisible] = useState(false);
 
-  // Active Challenge state (default null = user has not accepted any challenge yet)
+  // Active Challenge state
   const [challengesList, setChallengesList] = useState<Challenge[]>(PREDEFINED_CHALLENGES);
   const [activeChallenge, setActiveChallenge] = useState<Challenge | null>(null);
   const [challengeDay, setChallengeDay] = useState(1);
@@ -99,117 +208,110 @@ export const PrayerTimesScreen: React.FC<PrayerTimesScreenProps> = ({ navigation
   // Custom Challenge Form State
   const [newTitle, setNewTitle] = useState('');
   const [newDays, setNewDays] = useState(5);
-  const [newEmoji, setNewEmoji] = useState('🏆');
+  const [selectedIconType, setSelectedIconType] = useState<'starter' | 'shield' | 'crown' | 'custom'>('starter');
 
   // Alarm toggles state
   const [alarms, setAlarms] = useState<Record<string, boolean>>({
-    fajr: true,
-    sunrise: false,
-    dhuhr: true,
-    asr: true,
-    maghrib: true,
-    isha: true,
+    fajr: true, sunrise: false, dhuhr: true, asr: true, maghrib: true, isha: true,
   });
 
   // Prayer log checkmarks state
   const [completed, setCompleted] = useState<Record<string, boolean>>({
-    fajr: true,
-    sunrise: false,
-    dhuhr: true,
-    asr: true,
-    maghrib: false,
-    isha: false,
+    fajr: true, sunrise: false, dhuhr: true, asr: true, maghrib: false, isha: false,
   });
 
-  // Current time state
-  const [now, setNow] = useState(new Date());
-
-  useEffect(() => {
-    const timer = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const toggleAlarm = (id: string) => {
-    setAlarms((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
+  const toggleAlarm = (id: string) => setAlarms((prev) => ({ ...prev, [id]: !prev[id] }));
 
   const toggleCompleted = (id: string) => {
     setCompleted((prev) => {
       const nextState = !prev[id];
-      if (nextState) {
-        setPrayersCompletedCount((count) => count + 1);
-      } else {
-        setPrayersCompletedCount((count) => Math.max(0, count - 1));
-      }
+      if (nextState) setPrayersCompletedCount((c) => c + 1);
+      else setPrayersCompletedCount((c) => Math.max(0, c - 1));
       return { ...prev, [id]: nextState };
     });
   };
 
-  const startChallenge = (ch: Challenge) => {
-    setActiveChallenge(ch);
-    setChallengeDay(1);
-    setPrayersCompletedCount(0);
-  };
-
-  const leaveChallenge = () => {
-    setActiveChallenge(null);
-  };
+  const startChallenge = (ch: Challenge) => { setActiveChallenge(ch); setChallengeDay(1); setPrayersCompletedCount(0); };
+  const leaveChallenge = () => setActiveChallenge(null);
 
   const handleCreateCustomChallenge = () => {
     const titleToUse = newTitle.trim() || `${newDays}-Day Custom Namaz Challenge`;
     const totalPr = newDays * 5;
     const newCh: Challenge = {
-      id: `custom_${Date.now()}`,
-      title: titleToUse,
-      daysTotal: newDays,
-      prayersTotal: totalPr,
-      badge: `${newEmoji} ${newDays} DAYS`,
-      emoji: newEmoji,
-      description: `Custom goal to complete ${totalPr} prayers over ${newDays} days.`,
-      isCustom: true,
+      id: `custom_${Date.now()}`, title: titleToUse, daysTotal: newDays,
+      prayersTotal: totalPr, badge: `${newDays} DAYS`, iconType: selectedIconType,
+      bgImage: starterBg, gradientColors: ['#EFF6FF', '#DBEAFE'],
+      description: `${newDays} Days • ${totalPr} Prayers`, isCustom: true,
     };
-
     setChallengesList((prev) => [newCh, ...prev]);
     startChallenge(newCh);
     setNewTitle('');
     setCreateModalVisible(false);
   };
 
-  // Date calculation based on dayOffset
+  // ── Build live prayer list from AlAdhan timings
+  const DAILY_PRAYERS: PrayerItem[] = PRAYER_META.map((p) => {
+    const apiKey = TIMING_KEYS[p.id];
+    const rawTime = selectedDateData?.timings ? (selectedDateData.timings as any)[apiKey] : null;
+    const timeDisplay = rawTime ? format24To12(rawTime) : '--:-- --';
+    return { ...p, timeDisplay };
+  });
+
+  // ── Date display calculations
   const displayDate = new Date();
   displayDate.setDate(displayDate.getDate() + dayOffset);
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const formattedDate = `${dayNames[displayDate.getDay()]}, ${displayDate.getDate()} ${monthNames[displayDate.getMonth()]} ${displayDate.getFullYear()}`;
+  const hijriText = selectedDateData?.hijri?.formattedEn || "24 Rabi' al-Thani 1448 AH";
 
-  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  // ── Active prayer & countdown from context
+  const countdownStr = activeStatus.countdownStr;
+  const nextPrayer = DAILY_PRAYERS.find((p) => p.nameEn === activeStatus.nextPrayerEn) || DAILY_PRAYERS[0];
+  const activeIndex = activeStatus.activeIndex;
+  const locationLabel = locationPref.isGPS
+    ? 'GPS Location'
+    : `${locationPref.cityName}, ${locationPref.countryName}`;
 
-  const formattedDate = `${days[displayDate.getDay()]}, ${displayDate.getDate()} ${months[displayDate.getMonth()]} ${displayDate.getFullYear()}`;
-  const hijriText = `${18 + dayOffset} Rabi' al-Awwal 1448 AH`;
+  // ── City selector logic
+  const filteredCities = (majorCities as any[]).filter(
+    (c) =>
+      c.city.toLowerCase().includes(citySearch.toLowerCase()) ||
+      c.country.toLowerCase().includes(citySearch.toLowerCase())
+  );
 
-  // Calculate current minutes since midnight
-  const currentMins = now.getHours() * 60 + now.getMinutes();
+  const handleSelectCity = async (item: { city: string; country: string; lat: number; lon: number }) => {
+    await updateLocation({
+      isGPS: false,
+      cityName: item.city,
+      countryName: item.country,
+      lat: item.lat,
+      lon: item.lon,
+    });
+    setCityModalVisible(false);
+    setCitySearch('');
+  };
 
-  // Determine current active prayer & next prayer
-  let activeIndex = 0;
-  for (let i = 0; i < DAILY_PRAYERS.length; i++) {
-    if (currentMins >= DAILY_PRAYERS[i].minutes) {
-      activeIndex = i;
+  const handleUseGPS = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') return;
+      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      await updateLocation({
+        isGPS: true,
+        lat: loc.coords.latitude,
+        lon: loc.coords.longitude,
+        cityName: 'GPS',
+        countryName: '',
+      });
+      setCityModalVisible(false);
+    } catch (e) {
+      console.log('GPS error', e);
     }
-  }
-  const nextIndex = (activeIndex + 1) % DAILY_PRAYERS.length;
-  const nextPrayer = DAILY_PRAYERS[nextIndex];
+  };
 
-  // Countdown calculation
-  let targetMins = nextPrayer.minutes;
-  if (targetMins <= currentMins) {
-    targetMins += 24 * 60;
-  }
-  const diffSecs = Math.max(0, targetMins * 60 - (currentMins * 60 + now.getSeconds()));
-  const hrs = Math.floor(diffSecs / 3600);
-  const mins = Math.floor((diffSecs % 3600) / 60);
-  const secs = diffSecs % 60;
-  const countdownStr = `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-
-  const topInsetPadding = Math.max(insets.top, 12);
+  const topInset = insets.top > 0 ? insets.top : (Platform.OS === 'android' ? (RNStatusBar.currentHeight || 24) : 44);
+  const topInsetPadding = topInset + 6;
   const bottomInsetPadding = Math.max(insets.bottom, 12) + 120;
 
   // History past 7 days mock log
@@ -223,207 +325,312 @@ export const PrayerTimesScreen: React.FC<PrayerTimesScreenProps> = ({ navigation
     { day: 'Sun', date: '13 Sep', status: '-/5', completed: false },
   ];
 
+  const isFocused = useIsFocused();
+
+  const mainScrollRef = React.useRef<ScrollView>(null);
+  useScrollToTop(mainScrollRef);
+
+  useEffect(() => {
+    if (isFocused) {
+      mainScrollRef.current?.scrollTo({ y: 0, animated: false });
+    }
+  }, [isFocused]);
+
   return (
-    <SafeAreaView style={[styles.root, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
-      <StatusBar style="light" backgroundColor={colors.primary} translucent={false} />
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
+      {isFocused && <StatusBar style="light" backgroundColor="transparent" translucent={true} animated={true} />}
 
       <ScrollView
+        ref={mainScrollRef}
         style={styles.scroll}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomInsetPadding }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── Top Hero Banner */}
-        <LinearGradient
-          colors={
-            isDarkMode
-              ? [colors.primary, colors.primaryDark]
-              : [colors.primary, colors.primaryDark]
-          }
-          style={[styles.heroContainer, { paddingTop: topInsetPadding }]}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 1 }}
+        {/* ── Top Executive Hero Banner WITH BLUE ARTWORK BG */}
+        <ImageBackground
+          source={fortressBg}
+          style={{ width: '100%', borderBottomLeftRadius: 24, borderBottomRightRadius: 24, overflow: 'hidden' }}
+          imageStyle={{ borderBottomLeftRadius: 24, borderBottomRightRadius: 24, opacity: 0.95 }}
         >
-          {/* Top Row Buttons: Qibla & History/Tracker */}
-          <View style={styles.topBarRow}>
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() => navigation?.navigate?.('Qibla')}
-              style={styles.heroBtn}
-            >
-              <FontAwesome5 name="compass" size={12} color="#FFFFFF" style={{ marginRight: 4 }} />
-              <Text style={styles.heroBtnText}>Qibla</Text>
-            </TouchableOpacity>
+          <LinearGradient
+            colors={
+              isDarkMode
+                ? ['rgba(7, 13, 24, 0.75)', 'rgba(15, 26, 46, 0.85)']
+                : ['rgba(14, 55, 122, 0.65)', 'rgba(29, 78, 216, 0.78)']
+            }
+            style={[styles.heroContainer, { paddingTop: topInsetPadding }]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            {/* Top Bar Row: Location & Actions */}
+            <View style={styles.topBarRow}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={openSidebar}
+                  style={{ paddingRight: 10, paddingVertical: 4 }}
+                >
+                  <Ionicons name="menu" size={24} color="#FFFFFF" />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() => setCityModalVisible(true)}
+                  style={styles.locationChip}
+                >
+                  <View style={styles.locationDot} />
+                  <Ionicons name="location-sharp" size={13} color="#E2B842" style={{ marginRight: 4 }} />
+                  <Text style={styles.locationChipText} numberOfLines={1}>{locationLabel}</Text>
+                  <Ionicons name="chevron-down" size={11} color="#E2B842" style={{ marginLeft: 3 }} />
+                </TouchableOpacity>
+              </View>
 
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={() => setHistoryVisible(true)}
-              style={styles.heroBtn}
-            >
-              <Ionicons name="stats-chart" size={12} color="#FFFFFF" style={{ marginRight: 4 }} />
-              <Text style={styles.heroBtnText}>History</Text>
-            </TouchableOpacity>
-          </View>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() => navigation?.navigate?.('Qibla')}
+                  style={styles.heroBtn}
+                >
+                  <FontAwesome5 name="compass" size={12} color="#E2B842" style={{ marginRight: 5 }} />
+                  <Text style={styles.heroBtnText}>Qibla</Text>
+                </TouchableOpacity>
 
-          {/* Next Prayer Target Block */}
-          <View style={styles.nextPrayerContainer}>
-            <Text style={styles.nextPrayerLabel}>NEXT PRAYER</Text>
-            <Text style={styles.nextPrayerName}>{nextPrayer.nameEn}</Text>
-            <Text style={styles.nextPrayerTime}>{nextPrayer.timeDisplay}</Text>
-          </View>
-
-          {/* Countdown & Location Meta Row */}
-          <View style={styles.metaRow}>
-            <View style={styles.metaBadge}>
-              <Ionicons name="time-outline" size={12} color="#FFFFFF" style={{ marginRight: 3 }} />
-              <Text style={styles.metaBadgeText}>{countdownStr}</Text>
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() => setHistoryVisible(true)}
+                  style={styles.heroBtn}
+                >
+                  <Ionicons name="stats-chart" size={12} color="#60A5FA" style={{ marginRight: 5 }} />
+                  <Text style={styles.heroBtnText}>Tracker</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
-            <View style={styles.metaBadge}>
-              <Ionicons name="location-outline" size={12} color="#FFFFFF" style={{ marginRight: 3 }} />
-              <Text style={styles.metaBadgeText}>Rawalpindi</Text>
-            </View>
-          </View>
+            {/* Next Prayer Highlight Card */}
+            <View style={styles.heroGlassCard}>
+              <View style={styles.glassCardTopRow}>
+                <View style={styles.liveNextBadge}>
+                  <View style={styles.greenPulseDot} />
+                  <Text style={styles.liveNextBadgeText}>NEXT PRAYER</Text>
+                </View>
 
-          {/* Date Navigator Banner */}
-          <View style={styles.dateNavRow}>
-            <TouchableOpacity
-              onPress={() => setDayOffset((prev) => prev - 1)}
-              style={styles.dateNavBtn}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="chevron-back" size={16} color="#FFFFFF" />
-            </TouchableOpacity>
+                <View style={styles.countdownPill}>
+                  <Ionicons name="time-outline" size={12} color="#E2B842" style={{ marginRight: 4 }} />
+                  <Text style={styles.countdownPillText}>{countdownStr}</Text>
+                </View>
+              </View>
 
-            <View style={styles.dateNavCenter}>
-              <Text style={styles.dateNavTitle}>{formattedDate}</Text>
-              <Text style={styles.dateNavHijri}>{hijriText}</Text>
-            </View>
-
-            <TouchableOpacity
-              onPress={() => setDayOffset((prev) => prev + 1)}
-              style={styles.dateNavBtn}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="chevron-forward" size={16} color="#FFFFFF" />
-            </TouchableOpacity>
-          </View>
-        </LinearGradient>
-
-        {/* ── Active Challenge Tracker Banner (ONLY shown when user accepts a challenge) */}
-        {activeChallenge ? (
-          <View style={[styles.challengeBanner, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={styles.challengeHeaderRow}>
-              <View style={styles.challengeTitleGroup}>
-                <Text style={styles.challengeEmoji}>{activeChallenge.emoji || '🔥'}</Text>
+              <View style={styles.heroMainRow}>
                 <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Text style={[styles.challengeTitleText, { color: colors.textPrimary }]}>
-                      {activeChallenge.title}
-                    </Text>
-                    <View style={[styles.activeBadgeTag, { backgroundColor: colors.primary + '20' }]}>
-                      <Text style={[styles.activeBadgeTagText, { color: colors.primary }]}>{activeChallenge.badge}</Text>
-                    </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
+                    <Text style={styles.nextPrayerTitle}>{activeStatus.nextPrayerEn}</Text>
+                    <Text style={styles.nextPrayerUrdu}>{activeStatus.nextPrayerUr}</Text>
                   </View>
-                  <Text style={[styles.challengeSubText, { color: colors.textSecondary }]}>
-                    Day {challengeDay} of {activeChallenge.daysTotal} • {prayersCompletedCount}/{activeChallenge.prayersTotal} prayers
-                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Text style={styles.nextPrayerTimeBig}>{activeStatus.nextPrayerTimeDisplay}</Text>
+                    {isLoading && <ActivityIndicator size="small" color="#E2B842" />}
+                  </View>
+                </View>
+
+                <View style={styles.prayerIconCircle}>
+                  <MaterialCommunityIcons
+                    name={(nextPrayer?.icon ?? 'weather-night') as any}
+                    size={28}
+                    color="#E2B842"
+                  />
+                </View>
+              </View>
+            </View>
+
+            {/* Date Navigator Ribbon */}
+            <View style={styles.dateNavRibbon}>
+              <TouchableOpacity
+                onPress={() => setDayOffset(dayOffset - 1)}
+                style={styles.dateNavBtn}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="chevron-back" size={16} color="#FFFFFF" />
+              </TouchableOpacity>
+
+              <View style={styles.dateNavCenter}>
+                <Text style={styles.dateNavTitle}>{formattedDate}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 1, gap: 4 }}>
+                  <MaterialCommunityIcons name="star-crescent" size={11} color="#E2B842" />
+                  <Text style={styles.dateNavHijri}>{hijriText}</Text>
                 </View>
               </View>
 
               <TouchableOpacity
-                style={[styles.challengeBtn, { backgroundColor: colors.surfaceSecondary }]}
-                onPress={leaveChallenge}
-                activeOpacity={0.8}
+                onPress={() => setDayOffset(dayOffset + 1)}
+                style={styles.dateNavBtn}
+                activeOpacity={0.7}
               >
-                <Text style={[styles.challengeBtnText, { color: colors.primary }]}>Leave</Text>
+                <Ionicons name="chevron-forward" size={16} color="#FFFFFF" />
               </TouchableOpacity>
             </View>
+          </LinearGradient>
+        </ImageBackground>
 
-            {/* Progress Bar */}
-            <View style={[styles.progressTrack, { backgroundColor: colors.surfaceSecondary }]}>
-              <View
-                style={[
-                  styles.progressFill,
-                  {
-                    backgroundColor: colors.primary,
-                    width: `${Math.min(100, (prayersCompletedCount / activeChallenge.prayersTotal) * 100)}%`,
-                  },
-                ]}
-              />
-            </View>
+        {/* ── Active Challenge Tracker Banner (WITH RICH VISIBLE ARTWORK BG) */}
+        {activeChallenge ? (
+          <View style={styles.activeChallengeWrapper}>
+            <ImageBackground
+              source={activeChallenge.bgImage || starterBg}
+              style={styles.activeChallengeBg}
+              imageStyle={{ borderRadius: 20, opacity: 0.95 }}
+            >
+              <LinearGradient
+                colors={['rgba(7, 13, 24, 0.82)', 'rgba(15, 26, 46, 0.9)']}
+                style={styles.activeChallengeCardOverlay}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <View style={styles.activeChallengeHeader}>
+                  <View style={styles.activeSvgIconBox}>
+                    {activeChallenge.iconType === 'starter' && <StarterSvgIcon size={26} />}
+                    {activeChallenge.iconType === 'shield' && <ShieldSvgIcon size={26} />}
+                    {activeChallenge.iconType === 'crown' && <CrownSvgIcon size={26} />}
+                    {(!activeChallenge.iconType || activeChallenge.iconType === 'custom') && <CustomPlusSvgIcon size={26} color="#60A5FA" />}
+                  </View>
+
+                  <View style={{ flex: 1, marginLeft: 12 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <Text style={styles.activeChallengeTitle}>
+                        {activeChallenge.title}
+                      </Text>
+                      <View style={styles.activeLevelPill}>
+                        <Text style={styles.activeLevelText}>{activeChallenge.badge}</Text>
+                      </View>
+                    </View>
+
+                    <Text style={styles.activeChallengeSubtitle}>
+                      Day {challengeDay} of {activeChallenge.daysTotal} • {prayersCompletedCount}/{activeChallenge.prayersTotal} Prayers Done
+                    </Text>
+                  </View>
+
+                  <TouchableOpacity
+                    style={styles.leaveChallengeBtn}
+                    onPress={leaveChallenge}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.leaveChallengeText}>Leave</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Gamified Animated Progress Track */}
+                <View style={styles.activeProgressContainer}>
+                  <View style={styles.progressTrack}>
+                    <LinearGradient
+                      colors={['#3B82F6', '#60A5FA', '#E2B842']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={[
+                        styles.progressFill,
+                        {
+                          width: `${Math.min(100, Math.max(5, (prayersCompletedCount / activeChallenge.prayersTotal) * 100))}%`,
+                        },
+                      ]}
+                    />
+                  </View>
+
+                  <View style={styles.progressFooterRow}>
+                    <Text style={styles.progressPctText}>
+                      {Math.round((prayersCompletedCount / activeChallenge.prayersTotal) * 100)}% Complete
+                    </Text>
+                    <Text style={styles.streakText}>
+                      ⚡ {prayersCompletedCount} Completed
+                    </Text>
+                  </View>
+                </View>
+              </LinearGradient>
+            </ImageBackground>
           </View>
         ) : (
-          /* ── 3 Pre-Defined Challenges + Plus Button Carousel Section */
+          /* ── Compact Executive Challenge Tags Carousel with VIBRANT ARTWORK BGs */
           <View style={styles.challengesSection}>
             <View style={styles.sectionHeaderRow}>
-              <Text style={[styles.sectionTitleText, { color: colors.textPrimary }]}>
-                Prayer Streak Challenges
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Ionicons name="trophy" size={16} color="#F59E0B" />
+                <Text style={[styles.sectionTitleText, { color: colors.textPrimary }]}>
+                  Prayer Streak Challenges
+                </Text>
+              </View>
               <Text style={[styles.sectionSubtitleText, { color: colors.textSecondary }]}>
-                Pick a challenge to start tracking
+                Tap a tag to start
               </Text>
             </View>
 
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.challengesCarouselContainer}
+              contentContainerStyle={styles.challengesTagCarouselContainer}
             >
-              {/* 3 Pre-Defined Challenge Cards */}
               {challengesList.map((ch) => (
                 <TouchableOpacity
                   key={ch.id}
                   activeOpacity={0.8}
                   onPress={() => startChallenge(ch)}
-                  style={[
-                    styles.challengeCardItem,
-                    { backgroundColor: colors.surface, borderColor: colors.border },
-                  ]}
+                  style={styles.challengeTagCardWrapper}
                 >
-                  <View style={styles.cardItemTop}>
-                    <Text style={{ fontSize: 20 }}>{ch.emoji}</Text>
-                    <View style={[styles.cardItemBadge, { backgroundColor: colors.primary + '20' }]}>
-                      <Text style={[styles.cardItemBadgeText, { color: colors.primary }]}>{ch.badge}</Text>
-                    </View>
-                  </View>
+                  <ImageBackground
+                    source={ch.bgImage || starterBg}
+                    style={styles.challengeTagCardBg}
+                    imageStyle={{ borderRadius: 18, opacity: 0.95 }}
+                  >
+                    <LinearGradient
+                      colors={['rgba(7, 13, 24, 0.75)', 'rgba(15, 26, 46, 0.85)']}
+                      style={styles.tagCardOverlay}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                    >
+                      <View style={styles.tagSvgIconBadge}>
+                        {ch.iconType === 'starter' && <StarterSvgIcon size={22} />}
+                        {ch.iconType === 'shield' && <ShieldSvgIcon size={22} />}
+                        {ch.iconType === 'crown' && <CrownSvgIcon size={22} />}
+                        {(!ch.iconType || ch.iconType === 'custom') && <CustomPlusSvgIcon size={22} color="#60A5FA" />}
+                      </View>
 
-                  <Text style={[styles.cardItemTitle, { color: colors.textPrimary }]} numberOfLines={1}>
-                    {ch.title}
-                  </Text>
+                      <View style={styles.tagTextGroup}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                          <Text style={styles.tagTitleText} numberOfLines={1}>
+                            {ch.title}
+                          </Text>
+                          <View style={styles.tagBadgePill}>
+                            <Text style={styles.tagBadgePillText}>{ch.daysTotal}d</Text>
+                          </View>
+                        </View>
+                        <Text style={styles.tagSubText}>
+                          {ch.prayersTotal} prayers streak
+                        </Text>
+                      </View>
 
-                  <Text style={[styles.cardItemDesc, { color: colors.textSecondary }]} numberOfLines={2}>
-                    {ch.description}
-                  </Text>
-
-                  <View style={[styles.cardMeta, { backgroundColor: colors.surfaceSecondary }]}>
-                    <Text style={[styles.cardMetaText, { color: colors.textSecondary }]}>
-                      {ch.daysTotal} days • {ch.prayersTotal} prayers
-                    </Text>
-                  </View>
+                      <View style={styles.tagArrowBox}>
+                        <Ionicons name="chevron-forward" size={13} color="#FFFFFF" />
+                      </View>
+                    </LinearGradient>
+                  </ImageBackground>
                 </TouchableOpacity>
               ))}
 
-              {/* Plus (+) Card for Custom Challenge */}
+              {/* Plus Custom Challenge Tag Pill */}
               <TouchableOpacity
-                activeOpacity={0.8}
+                activeOpacity={0.78}
                 onPress={() => setCreateModalVisible(true)}
                 style={[
-                  styles.challengeCardItem,
-                  styles.plusCardItem,
-                  { backgroundColor: colors.surface, borderColor: colors.border },
+                  styles.plusCustomTagCard,
+                  {
+                    backgroundColor: isDarkMode ? '#1E293B' : '#FFFFFF',
+                    borderColor: colors.primary + '60',
+                  },
                 ]}
               >
-                <View style={[styles.plusIconCircle, { backgroundColor: colors.surfaceSecondary }]}>
-                  <Ionicons name="add" size={24} color={colors.primary} />
+                <View style={[styles.tagSvgIconBadgeCustom, { backgroundColor: colors.primary + '15' }]}>
+                  <CustomPlusSvgIcon size={20} color={colors.primary} />
                 </View>
 
-                <Text style={[styles.cardItemTitle, { color: colors.textPrimary, textAlign: 'center', marginTop: 8 }]}>
-                  Create Custom
-                </Text>
-
-                <Text style={[styles.cardItemDesc, { color: colors.textSecondary, textAlign: 'center' }]}>
-                  Set your own challenge
-                </Text>
+                <View style={styles.tagTextGroup}>
+                  <Text style={[styles.tagTitleTextCustom, { color: colors.primary }]}>Create Custom</Text>
+                  <Text style={[styles.tagSubTextCustom, { color: colors.textSecondary }]}>Set custom goal</Text>
+                </View>
               </TouchableOpacity>
             </ScrollView>
           </View>
@@ -443,6 +650,16 @@ export const PrayerTimesScreen: React.FC<PrayerTimesScreenProps> = ({ navigation
             )}
           </View>
 
+          {/* Method badge */}
+          {selectedDateData?.methodName && (
+            <View style={[styles.methodBadge, { backgroundColor: colors.surfaceSecondary }]}>
+              <Ionicons name="compass-outline" size={11} color={colors.textSecondary} style={{ marginRight: 4 }} />
+              <Text style={[styles.methodBadgeText, { color: colors.textSecondary }]} numberOfLines={1}>
+                {selectedDateData.methodName}
+              </Text>
+            </View>
+          )}
+
           {DAILY_PRAYERS.map((item, idx) => {
             const isCurrent = idx === activeIndex && dayOffset === 0;
             const isAlarmOn = alarms[item.id];
@@ -451,7 +668,7 @@ export const PrayerTimesScreen: React.FC<PrayerTimesScreenProps> = ({ navigation
             return (
               <TouchableOpacity
                 key={item.id}
-                onPress={() => navigation?.navigate?.('PrayerGuide')}
+                onPress={() => navigation?.navigate?.('PrayerGuide', { prayerId: item.id.toLowerCase() })}
                 activeOpacity={0.7}
               >
                 <View
@@ -464,102 +681,62 @@ export const PrayerTimesScreen: React.FC<PrayerTimesScreenProps> = ({ navigation
                     },
                   ]}
                 >
-
-                <View style={styles.prayerCardContent}>
-                  {/* Left Bell Icon */}
-                  <TouchableOpacity
-                    onPress={(e) => {
-                      e.stopPropagation();
-                      toggleAlarm(item.id);
-                    }}
-                    style={styles.bellBtn}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons
-                      name={isAlarmOn ? 'notifications' : 'notifications-outline'}
-                      size={20}
-                      color={isAlarmOn ? colors.primary : colors.textSecondary}
-                    />
-                  </TouchableOpacity>
-
-                  {/* Prayer Icon & Name */}
-                  <View style={styles.nameGroup}>
-                    <MaterialCommunityIcons
-                      name={item.icon as any}
-                      size={22}
-                      color={isCurrent ? colors.primary : colors.textSecondary}
-                      style={{ marginRight: 10 }}
-                    />
-                    <View>
-                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                        <Text
-                          style={[
-                            styles.prayerName,
-                            {
-                              color: colors.textPrimary,
-                              fontWeight: isCurrent ? '800' : '600',
-                            },
-                          ]}
-                        >
-                          {item.nameEn}
-                        </Text>
-                        {isCurrent && (
-                          <View style={[styles.nowBadge, { backgroundColor: colors.primary }]}>
-                            <Text style={styles.nowBadgeText}>NOW</Text>
-                          </View>
-                        )}
-                      </View>
-                      <Text style={[styles.prayerUrdu, { color: colors.textSecondary }]}>
-                        {item.nameUr}
-                      </Text>
-                    </View>
-                  </View>
-
-                  {/* Prayer Time */}
-                  <Text
-                    style={[
-                      styles.prayerTimeText,
-                      {
-                        color: isCurrent ? colors.primary : colors.textPrimary,
-                        fontWeight: isCurrent ? '800' : '600',
-                      },
-                    ]}
-                  >
-                    {item.timeDisplay}
-                  </Text>
-
-                  {/* Right Completion Checkbox */}
-                  <TouchableOpacity
-                    onPress={(e) => {
-                      e.stopPropagation();
-                      toggleCompleted(item.id);
-                    }}
-                    style={styles.checkBtn}
-                    activeOpacity={0.7}
-                  >
-                    <View
-                      style={[
-                        styles.checkCircle,
-                        {
-                          borderColor: isDone ? colors.primary : colors.border,
-                          backgroundColor: isDone ? colors.primary : 'transparent',
-                        },
-                      ]}
+                  <View style={styles.prayerCardContent}>
+                    <TouchableOpacity
+                      onPress={(e) => { e.stopPropagation(); toggleAlarm(item.id); }}
+                      style={styles.bellBtn} activeOpacity={0.7}
                     >
-                      {isDone && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
+                      <Ionicons
+                        name={isAlarmOn ? 'notifications' : 'notifications-outline'}
+                        size={20}
+                        color={isAlarmOn ? colors.primary : colors.textSecondary}
+                      />
+                    </TouchableOpacity>
+
+                    <View style={styles.nameGroup}>
+                      <MaterialCommunityIcons
+                        name={item.icon as any} size={22}
+                        color={isCurrent ? colors.primary : colors.textSecondary}
+                        style={{ marginRight: 10 }}
+                      />
+                      <View>
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                          <Text style={[styles.prayerName, { color: colors.textPrimary, fontWeight: isCurrent ? '800' : '600' }]}>
+                            {item.nameEn}
+                          </Text>
+                          {isCurrent && (
+                            <View style={[styles.nowBadge, { backgroundColor: colors.primary }]}>
+                              <Text style={styles.nowBadgeText}>NOW</Text>
+                            </View>
+                          )}
+                        </View>
+                        <Text style={[styles.prayerUrdu, { color: colors.textSecondary }]}>{item.nameUr}</Text>
+                      </View>
                     </View>
-                  </TouchableOpacity>
+
+                    <Text style={[styles.prayerTimeText, { color: isCurrent ? colors.primary : colors.textPrimary, fontWeight: isCurrent ? '800' : '600' }]}>
+                      {item.timeDisplay}
+                    </Text>
+
+                    <TouchableOpacity
+                      onPress={(e) => { e.stopPropagation(); toggleCompleted(item.id); }}
+                      style={styles.checkBtn} activeOpacity={0.7}
+                    >
+                      <View style={[styles.checkCircle, { borderColor: isDone ? colors.primary : colors.border, backgroundColor: isDone ? colors.primary : 'transparent' }]}>
+                        {isDone && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
+                      </View>
+                    </TouchableOpacity>
+                  </View>
                 </View>
-              </View>
-            </TouchableOpacity>
-          );
-        })}
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </ScrollView>
 
       {/* Floating Tracker & History Button */}
       <TouchableOpacity
-        style={[styles.floatingHistoryBtn, { bottom: Math.max(insets.bottom, 12) + 70 }]}
+        style={[styles.floatingHistoryBtn, { bottom: Math.max(insets.bottom, 4) + 0 }]}
         activeOpacity={0.85}
         onPress={() => setHistoryVisible(true)}
       >
@@ -599,36 +776,38 @@ export const PrayerTimesScreen: React.FC<PrayerTimesScreenProps> = ({ navigation
             <ScrollView showsVerticalScrollIndicator={false}>
               {/* Stats Overview Grid */}
               <View style={styles.statsRow}>
-                <View style={[styles.statBox, { backgroundColor: isDarkMode ? '#222' : '#FBF9F5', borderColor: colors.border }]}>
-                  <Text style={[styles.statNumber, { color: colors.primary }]}>85%</Text>
-                  <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Weekly Rate</Text>
+                <View style={[styles.statBox, { backgroundColor: isDarkMode ? '#222' : '#F8FAFC', borderColor: colors.border }]}>
+                  <Text style={[styles.statNumber, { color: colors.primary }]}>86%</Text>
+                  <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Weekly Completion</Text>
                 </View>
 
-                <View style={[styles.statBox, { backgroundColor: isDarkMode ? '#222' : '#FBF9F5', borderColor: colors.border }]}>
-                  <Text style={[styles.statNumber, { color: colors.primary }]}>🔥 3</Text>
-                  <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Day Streak</Text>
+                <View style={[styles.statBox, { backgroundColor: isDarkMode ? '#222' : '#F8FAFC', borderColor: colors.border }]}>
+                  <Text style={[styles.statNumber, { color: '#F59E0B' }]}>7 Days</Text>
+                  <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Current Streak</Text>
                 </View>
 
-                <View style={[styles.statBox, { backgroundColor: isDarkMode ? '#222' : '#FBF9F5', borderColor: colors.border }]}>
-                  <Text style={[styles.statNumber, { color: colors.primary }]}>38</Text>
-                  <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Logged</Text>
+                <View style={[styles.statBox, { backgroundColor: isDarkMode ? '#222' : '#F8FAFC', borderColor: colors.border }]}>
+                  <Text style={[styles.statNumber, { color: '#10B981' }]}>28/35</Text>
+                  <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Completed Prayers</Text>
                 </View>
               </View>
 
-              {/* Last 7 Days History Row */}
               <Text style={[styles.sectionHeading, { color: isDarkMode ? '#FFF' : '#1A1A1A' }]}>
                 Past 7 Days
               </Text>
+
               <View style={styles.historyGrid}>
-                {past7Days.map((item, i) => (
+                {past7Days.map((item, idx) => (
                   <View
-                    key={i}
+                    key={idx}
                     style={[
                       styles.historyDayCard,
                       {
-                        backgroundColor: item.completed
-                          ? (isDarkMode ? 'rgba(212,175,55,0.15)' : '#FAF6EE')
-                          : (isDarkMode ? '#222' : '#F7F7F7'),
+                        backgroundColor: item.isToday
+                          ? colors.primary + '15'
+                          : isDarkMode
+                            ? '#222'
+                            : '#F9FAFB',
                         borderColor: item.isToday ? colors.primary : colors.border,
                       },
                     ]}
@@ -638,11 +817,15 @@ export const PrayerTimesScreen: React.FC<PrayerTimesScreenProps> = ({ navigation
                     </Text>
                     <Text style={[styles.historyDate, { color: colors.textSecondary }]}>{item.date}</Text>
                     <View style={styles.historyStatusBadge}>
-                      {item.completed ? (
-                        <Ionicons name="checkmark-circle" size={18} color={colors.primary} />
-                      ) : (
-                        <Text style={{ fontSize: 11, color: colors.textSecondary }}>{item.status}</Text>
-                      )}
+                      <Text
+                        style={{
+                          fontSize: 11,
+                          fontWeight: '700',
+                          color: item.completed ? '#10B981' : colors.textSecondary,
+                        }}
+                      >
+                        {item.status}
+                      </Text>
                     </View>
                   </View>
                 ))}
@@ -667,7 +850,7 @@ export const PrayerTimesScreen: React.FC<PrayerTimesScreenProps> = ({ navigation
                   Create Custom Challenge
                 </Text>
                 <Text style={[styles.modalSubtitle, { color: isDarkMode ? '#A59B85' : '#665C4D' }]}>
-                  Set your duration, title & badge emoji
+                  Set your duration, title & badge icon
                 </Text>
               </View>
               <TouchableOpacity
@@ -723,26 +906,29 @@ export const PrayerTimesScreen: React.FC<PrayerTimesScreenProps> = ({ navigation
                 })}
               </View>
 
-              {/* Badge Emoji Selection */}
+              {/* SVG Icon Badge Selection */}
               <Text style={[styles.formLabel, { color: isDarkMode ? '#FFF' : '#1A1A1A', marginTop: 14 }]}>
-                Badge Icon
+                Select Badge Style
               </Text>
-              <View style={styles.emojiRow}>
-                {['🏆', '🔥', '⚡', '👑', '🛡️', '🕌', '💎'].map((em) => {
-                  const isSelected = newEmoji === em;
+              <View style={styles.svgIconRow}>
+                {(['starter', 'shield', 'crown', 'custom'] as const).map((iconKey) => {
+                  const isSelected = selectedIconType === iconKey;
                   return (
                     <TouchableOpacity
-                      key={em}
-                      onPress={() => setNewEmoji(em)}
+                      key={iconKey}
+                      onPress={() => setSelectedIconType(iconKey)}
                       style={[
-                        styles.emojiBtn,
+                        styles.svgIconSelectBtn,
                         {
-                          backgroundColor: isSelected ? colors.primary + '22' : (isDarkMode ? '#222' : '#F4EFE6'),
+                          backgroundColor: isSelected ? colors.primary + '20' : (isDarkMode ? '#222' : '#F4EFE6'),
                           borderColor: isSelected ? colors.primary : 'transparent',
                         },
                       ]}
                     >
-                      <Text style={{ fontSize: 20 }}>{em}</Text>
+                      {iconKey === 'starter' && <StarterSvgIcon size={22} />}
+                      {iconKey === 'shield' && <ShieldSvgIcon size={22} />}
+                      {iconKey === 'crown' && <CrownSvgIcon size={22} />}
+                      {iconKey === 'custom' && <CustomPlusSvgIcon size={22} color={colors.primary} />}
                     </TouchableOpacity>
                   );
                 })}
@@ -760,7 +946,106 @@ export const PrayerTimesScreen: React.FC<PrayerTimesScreenProps> = ({ navigation
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+      {/* ── 3. City Selector Modal ──────────────────────────────────────── */}
+      <Modal
+        visible={cityModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setCityModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalCard, { backgroundColor: isDarkMode ? '#171717' : '#FFFFFF', maxHeight: '80%' }]}>
+            <View style={styles.modalHeader}>
+              <View>
+                <Text style={[styles.modalTitle, { color: isDarkMode ? '#FFF' : '#1A1A1A' }]}>
+                  Select City
+                </Text>
+                <Text style={[styles.modalSubtitle, { color: isDarkMode ? '#A59B85' : '#665C4D' }]}>
+                  For accurate prayer times
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setCityModalVisible(false)}
+                style={[styles.modalCloseBtn, { backgroundColor: isDarkMode ? '#282828' : '#F4EFE6' }]}
+              >
+                <Ionicons name="close" size={18} color={colors.primary} />
+              </TouchableOpacity>
+            </View>
+
+            {/* GPS Button */}
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={handleUseGPS}
+              style={[styles.gpsBtn, { borderColor: colors.primary, backgroundColor: colors.primary + '15' }]}
+            >
+              <Ionicons name="navigate" size={16} color={colors.primary} style={{ marginRight: 8 }} />
+              <Text style={[styles.gpsBtnText, { color: colors.primary }]}>Use Current GPS Location</Text>
+            </TouchableOpacity>
+
+            {/* Search Input */}
+            <View style={[styles.citySearchBox, { backgroundColor: isDarkMode ? '#242424' : '#F5F5F5', borderColor: colors.border }]}>
+              <Ionicons name="search" size={15} color={colors.textSecondary} style={{ marginRight: 8 }} />
+              <TextInput
+                style={[styles.citySearchInput, { color: isDarkMode ? '#FFF' : '#1A1A1A' }]}
+                placeholder="Search city or country..."
+                placeholderTextColor={isDarkMode ? '#666' : '#999'}
+                value={citySearch}
+                onChangeText={setCitySearch}
+                autoCapitalize="words"
+              />
+              {citySearch.length > 0 && (
+                <TouchableOpacity onPress={() => setCitySearch('')}>
+                  <Ionicons name="close-circle" size={16} color={colors.textSecondary} />
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {/* City FlatList */}
+            <FlatList
+              data={filteredCities}
+              keyExtractor={(item, idx) => `${item.city}_${item.country}_${idx}`}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+              style={{ marginTop: 8 }}
+              renderItem={({ item }) => {
+                const isSelected = !locationPref.isGPS &&
+                  locationPref.cityName === item.city &&
+                  locationPref.countryName === item.country;
+                return (
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    onPress={() => handleSelectCity(item)}
+                    style={[
+                      styles.cityListItem,
+                      {
+                        backgroundColor: isSelected ? colors.primary + '15' : 'transparent',
+                        borderColor: isSelected ? colors.primary + '40' : colors.border,
+                      },
+                    ]}
+                  >
+                    <Ionicons
+                      name="location-outline"
+                      size={16}
+                      color={isSelected ? colors.primary : colors.textSecondary}
+                      style={{ marginRight: 10 }}
+                    />
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.cityItemName, { color: isSelected ? colors.primary : (isDarkMode ? '#FFF' : '#1A1A1A'), fontWeight: isSelected ? '700' : '500' }]}>
+                        {item.city}
+                      </Text>
+                      <Text style={[styles.cityItemCountry, { color: colors.textSecondary }]}>
+                        {item.country}
+                      </Text>
+                    </View>
+                    {isSelected && <Ionicons name="checkmark-circle" size={18} color={colors.primary} />}
+                  </TouchableOpacity>
+                );
+              }}
+            />
+          </View>
+        </View>
+      </Modal>
+    </View>
   );
 };
 
@@ -769,28 +1054,51 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   scrollContent: { paddingTop: 0 },
 
-  // Top Hero Container
+  // Top Executive Hero Container
   heroContainer: {
     paddingHorizontal: 16,
-    paddingBottom: 16,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-    alignItems: 'center',
+    paddingBottom: 14,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
   },
   topBarRow: {
     width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: 14,
+  },
+  locationChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  locationDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#10B981',
+    marginRight: 6,
+  },
+  locationChipText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '600',
   },
   heroBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    paddingHorizontal: 11,
+    paddingVertical: 6,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
   },
   heroBtnText: {
     color: '#FFFFFF',
@@ -798,68 +1106,109 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // Next Prayer Info
-  nextPrayerContainer: {
-    alignItems: 'center',
-    marginVertical: 8,
+  // Hero Glass Card
+  heroGlassCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    padding: 16,
+    marginBottom: 12,
   },
-  nextPrayerLabel: {
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontSize: 10,
-    fontWeight: '600',
+  glassCardTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  liveNextBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.3)',
+  },
+  greenPulseDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#34D399',
+    marginRight: 5,
+  },
+  liveNextBadgeText: {
+    color: '#34D399',
+    fontSize: 9,
+    fontWeight: '700',
     letterSpacing: 0.5,
   },
-  nextPrayerName: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '700',
-    marginTop: 2,
+  countdownPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 10,
   },
-  nextPrayerTime: {
+  countdownPillText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+
+  // Hero Main Content inside Glass Card
+  heroMainRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  nextPrayerTitle: {
+    color: '#FFFFFF',
+    fontSize: 22,
+    fontWeight: '800',
+  },
+  nextPrayerUrdu: {
+    color: '#E2B842',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  nextPrayerTimeBig: {
     color: '#FFFFFF',
     fontSize: 28,
     fontWeight: '800',
     marginTop: 2,
   },
-
-  // Meta Row
-  metaRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 4,
-    marginBottom: 8,
-  },
-  metaBadge: {
-    flexDirection: 'row',
+  prayerIconCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 10,
-  },
-  metaBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 11,
-    fontWeight: '500',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
 
-  // Date Navigator Row
-  dateNavRow: {
+  // Date Navigator Ribbon
+  dateNavRibbon: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    width: '100%',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 12,
-    paddingHorizontal: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 16,
+    paddingHorizontal: 8,
     paddingVertical: 6,
-    marginTop: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
   },
   dateNavBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -869,153 +1218,242 @@ const styles = StyleSheet.create({
   dateNavTitle: {
     color: '#FFFFFF',
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   dateNavHijri: {
-    color: 'rgba(255, 255, 255, 0.7)',
+    color: 'rgba(255, 255, 255, 0.8)',
     fontSize: 10,
-    marginTop: 1,
+    fontWeight: '500',
   },
 
-  // Active Challenge Banner
-  challengeBanner: {
+  // Active Challenge Card with Artwork BG
+  activeChallengeWrapper: {
     marginHorizontal: 16,
     marginTop: 12,
-    borderRadius: 12,
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  activeChallengeBg: {
+    width: '100%',
+  },
+  activeChallengeCardOverlay: {
+    padding: 16,
+    borderRadius: 20,
     borderWidth: 1,
-    padding: 12,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
   },
-  challengeHeaderRow: {
+  activeChallengeHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: 12,
   },
-  challengeTitleGroup: {
-    flexDirection: 'row',
+  activeSvgIconBox: {
+    width: 46,
+    height: 46,
+    borderRadius: 14,
     alignItems: 'center',
-    flex: 1,
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
-  challengeEmoji: {
-    fontSize: 18,
-    marginRight: 6,
+  activeChallengeTitle: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '800',
   },
-  challengeTitleText: {
-    fontSize: 13,
+  activeLevelPill: {
+    backgroundColor: 'rgba(226, 184, 66, 0.25)',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(226, 184, 66, 0.4)',
+  },
+  activeLevelText: {
+    color: '#E2B842',
+    fontSize: 9,
+    fontWeight: '800',
+  },
+  activeChallengeSubtitle: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 11,
+    marginTop: 2,
+    fontWeight: '500',
+  },
+  leaveChallengeBtn: {
+    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+    paddingHorizontal: 11,
+    paddingVertical: 6,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.4)',
+  },
+  leaveChallengeText: {
+    color: '#F87171',
+    fontSize: 11,
     fontWeight: '700',
   },
-  activeBadgeTag: {
-    marginLeft: 4,
-    paddingHorizontal: 5,
-    paddingVertical: 1,
-    borderRadius: 3,
-  },
-  activeBadgeTagText: {
-    fontSize: 8,
-    fontWeight: '700',
-  },
-  challengeSubText: {
-    fontSize: 10,
-    marginTop: 1,
-  },
-  challengeBtn: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  challengeBtnText: {
-    fontSize: 10,
-    fontWeight: '600',
+  activeProgressContainer: {
+    marginTop: 6,
   },
   progressTrack: {
-    height: 4,
-    borderRadius: 2,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    borderRadius: 2,
+    borderRadius: 4,
+  },
+  progressFooterRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 6,
+  },
+  progressPctText: {
+    color: '#60A5FA',
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  streakText: {
+    color: '#FBBF24',
+    fontSize: 11,
+    fontWeight: '800',
   },
 
-  // ── Challenges Carousel Section
+  // ── Challenge Tag Cards Section with Vibrant Artwork BGs
   challengesSection: {
-    paddingTop: 12,
+    paddingTop: 14,
     paddingBottom: 4,
   },
   sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
-    marginBottom: 8,
+    marginBottom: 10,
   },
   sectionTitleText: {
     fontSize: 14,
     fontWeight: '700',
   },
   sectionSubtitleText: {
-    fontSize: 10,
-    marginTop: 1,
-  },
-  challengesCarouselContainer: {
-    paddingHorizontal: 16,
-    gap: 10,
-  },
-  challengeCardItem: {
-    width: 160,
-    borderRadius: 14,
-    borderWidth: 1,
-    padding: 12,
-    justifyContent: 'space-between',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  cardItemTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 6,
-  },
-  cardItemBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  cardItemBadgeText: {
-    fontSize: 8,
-    fontWeight: '700',
-  },
-  cardItemTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    marginBottom: 3,
-  },
-  cardItemDesc: {
-    fontSize: 10,
-    lineHeight: 13,
-    marginBottom: 8,
-  },
-  cardMeta: {
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 6,
-    alignItems: 'center',
-  },
-  cardMetaText: {
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: '500',
   },
-
-  // Plus Custom Card Item
-  plusCardItem: {
+  challengesTagCarouselContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 2,
+    gap: 10,
+  },
+  challengeTagCardWrapper: {
+    minWidth: 220,
+    height: 60,
+    borderRadius: 18,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  challengeTagCardBg: {
+    width: '100%',
+    height: '100%',
+  },
+  tagCardOverlay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    height: 60,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  plusCustomTagCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    height: 60,
+    borderRadius: 18,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    minWidth: 165,
+  },
+  tagSvgIconBadge: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    borderStyle: 'dashed',
+    marginRight: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
-  plusIconCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+  tagSvgIconBadgeCustom: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  tagTextGroup: {
+    flex: 1,
+    justifyContent: 'center',
+    marginRight: 8,
+  },
+  tagTitleText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: -0.2,
+  },
+  tagTitleTextCustom: {
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: -0.2,
+  },
+  tagBadgePill: {
+    backgroundColor: 'rgba(226, 184, 66, 0.25)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(226, 184, 66, 0.4)',
+  },
+  tagBadgePillText: {
+    color: '#E2B842',
+    fontSize: 9,
+    fontWeight: '800',
+  },
+  tagSubText: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 10,
+    marginTop: 2,
+    fontWeight: '500',
+  },
+  tagSubTextCustom: {
+    fontSize: 10,
+    marginTop: 2,
+    fontWeight: '500',
+  },
+  tagArrowBox: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1023,7 +1461,7 @@ const styles = StyleSheet.create({
   // Daily Prayer Times List
   listContainer: {
     paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingTop: 14,
   },
   listHeaderRow: {
     flexDirection: 'row',
@@ -1043,19 +1481,19 @@ const styles = StyleSheet.create({
 
   // Prayer Cards
   prayerCard: {
-    borderRadius: 12,
+    borderRadius: 14,
     marginBottom: 8,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.04,
     shadowRadius: 3,
-    elevation: 1,
+    elevation: 0,
   },
   prayerCardContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     paddingVertical: 12,
   },
   bellBtn: {
@@ -1071,15 +1509,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   nowBadge: {
-    marginLeft: 4,
-    paddingHorizontal: 5,
-    paddingVertical: 1,
-    borderRadius: 3,
+    marginLeft: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
   },
   nowBadgeText: {
     color: '#FFFFFF',
     fontSize: 8,
-    fontWeight: '700',
+    fontWeight: '800',
   },
   prayerUrdu: {
     fontSize: 10,
@@ -1093,9 +1531,9 @@ const styles = StyleSheet.create({
     padding: 3,
   },
   checkCircle: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1110,34 +1548,34 @@ const styles = StyleSheet.create({
   floatingHistoryCircle: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 22,
     borderWidth: 1,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 4,
   },
   floatingHistoryText: {
     color: '#FFFFFF',
-    fontSize: 11,
-    fontWeight: '600',
-    marginLeft: 5,
+    fontSize: 12,
+    fontWeight: '700',
+    marginLeft: 6,
   },
 
   // Modals Styling
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'flex-end',
   },
   modalCard: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingHorizontal: 16,
-    paddingTop: 14,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 18,
+    paddingTop: 16,
     paddingBottom: 28,
     maxHeight: '80%',
   },
@@ -1240,15 +1678,15 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
   },
-  emojiRow: {
+  svgIconRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 10,
   },
-  emojiBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 1,
+  svgIconSelectBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1263,5 +1701,65 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 13,
     fontWeight: '700',
+  },
+
+  // Method badge (under list header)
+  methodBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+    marginBottom: 8,
+  },
+  methodBadgeText: {
+    fontSize: 10,
+    fontWeight: '500',
+  },
+
+  // City Selector Modal styles
+  gpsBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    marginBottom: 12,
+  },
+  gpsBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  citySearchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginBottom: 4,
+  },
+  citySearchInput: {
+    flex: 1,
+    fontSize: 14,
+    paddingVertical: 2,
+  },
+  cityListItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginBottom: 4,
+  },
+  cityItemName: {
+    fontSize: 14,
+  },
+  cityItemCountry: {
+    fontSize: 11,
+    marginTop: 1,
   },
 });

@@ -121,6 +121,23 @@
           ]
         },
         {
+          "id": "pose_takbeer_ruku",
+          "posture_img": "standing_takbeer_male.jpeg",
+          "label": {
+            "en": "Takbeer — Bowing Transition",
+            "ur": "تکبیر — رکوع کے لیے"
+          },
+          "phrases": [
+            {
+              "id": "p_takbeer_ruku_r1",
+              "arabic": "اللَّهُ أَكْبَرُ",
+              "transliteration": "Allahu Akbar",
+              "translation_ur": "اللہ سب سے بڑا ہے",
+              "audio_ar": "common_takbeer_ar.mp3"
+            }
+          ]
+        },
+        {
           "id": "pose_ruku",
           "posture_img": "ruku_male.jpeg",
           "label": {
@@ -129,14 +146,7 @@
           },
           "phrases": [
             {
-              "id": "p1",
-              "arabic": "اللَّهُ أَكْبَرُ",
-              "transliteration": "Allahu Akbar",
-              "translation_ur": "اللہ سب سے بڑا ہے",
-              "audio_ar": "common_takbeer_ar.mp3"
-            },
-            {
-              "id": "p2",
+              "id": "p_ruku_tasbeeh_r1",
               "arabic": "سُبْحَانَ رَبِّيَ الْعَظِيمِ",
               "transliteration": "Subhana Rabbiyal 'Adheem",
               "translation_ur": "میرا رب پاک ہے، بہت عظمت والا",
@@ -146,12 +156,29 @@
         },
         {
           "id": "pose_qawma",
-          "posture_img": "standing_male.jpeg",
+          "posture_img": "standingAfterRuku.jpeg",
           "label": {
             "en": "Qawma — Standing Straight",
             "ur": "قومہ"
           },
           "phrases": []
+        },
+        {
+          "id": "pose_takbeer_sujood_1",
+          "posture_img": "standing_takbeer_male.jpeg",
+          "label": {
+            "en": "Takbeer — Sujood Transition",
+            "ur": "تکبیر — سجدے کے لیے"
+          },
+          "phrases": [
+            {
+              "id": "p_takbeer_sujood1_r1",
+              "arabic": "اللَّهُ أَكْبَرُ",
+              "transliteration": "Allahu Akbar",
+              "translation_ur": "اللہ سب سے بڑا ہے",
+              "audio_ar": "common_takbeer_ar.mp3"
+            }
+          ]
         },
         {
           "id": "pose_sujood_1",
@@ -162,14 +189,7 @@
           },
           "phrases": [
             {
-              "id": "p1",
-              "arabic": "اللَّهُ أَكْبَرُ",
-              "transliteration": "Allahu Akbar",
-              "translation_ur": "اللہ سب سے بڑا ہے",
-              "audio_ar": "common_takbeer_ar.mp3"
-            },
-            {
-              "id": "p2",
+              "id": "p_sujood1_tasbeeh_r1",
               "arabic": "سُبْحَانَ رَبِّيَ الْأَعْلَى",
               "transliteration": "Subhana Rabbiyal A'la",
               "translation_ur": "میرا رب پاک ہے، سب سے بلند",
@@ -336,6 +356,23 @@
           ]
         },
         {
+          "id": "pose_takbeer_ruku",
+          "posture_img": "standing_takbeer_male.jpeg",
+          "label": {
+            "en": "Takbeer — Bowing Transition",
+            "ur": "تکبیر — رکوع کے لیے"
+          },
+          "phrases": [
+            {
+              "id": "p_takbeer_ruku_r2",
+              "arabic": "اللَّهُ أَكْبَرُ",
+              "transliteration": "Allahu Akbar",
+              "translation_ur": "اللہ سب سے بڑا ہے",
+              "audio_ar": "common_takbeer_ar.mp3"
+            }
+          ]
+        },
+        {
           "id": "pose_ruku",
           "posture_img": "ruku_male.jpeg",
           "label": {
@@ -344,14 +381,7 @@
           },
           "phrases": [
             {
-              "id": "p1",
-              "arabic": "اللَّهُ أَكْبَرُ",
-              "transliteration": "Allahu Akbar",
-              "translation_ur": "اللہ سب سے بڑا ہے",
-              "audio_ar": "common_takbeer_ar.mp3"
-            },
-            {
-              "id": "p2",
+              "id": "p_ruku_tasbeeh_r2",
               "arabic": "سُبْحَانَ رَبِّيَ الْعَظِيمِ",
               "transliteration": "Subhana Rabbiyal 'Adheem",
               "translation_ur": "میرا رب پاک ہے، بہت عظمت والا",
@@ -361,12 +391,29 @@
         },
         {
           "id": "pose_qawma",
-          "posture_img": "standing_male.jpeg",
+          "posture_img": "standingAfterRuku.jpeg",
           "label": {
             "en": "Qawma — Standing Straight",
             "ur": "قومہ"
           },
           "phrases": []
+        },
+        {
+          "id": "pose_takbeer_sujood_1",
+          "posture_img": "standing_takbeer_male.jpeg",
+          "label": {
+            "en": "Takbeer — Sujood Transition",
+            "ur": "تکبیر — سجدے کے لیے"
+          },
+          "phrases": [
+            {
+              "id": "p_takbeer_sujood1_r2",
+              "arabic": "اللَّهُ أَكْبَرُ",
+              "transliteration": "Allahu Akbar",
+              "translation_ur": "اللہ سب سے بڑا ہے",
+              "audio_ar": "common_takbeer_ar.mp3"
+            }
+          ]
         },
         {
           "id": "pose_sujood_1",
@@ -377,14 +424,7 @@
           },
           "phrases": [
             {
-              "id": "p1",
-              "arabic": "اللَّهُ أَكْبَرُ",
-              "transliteration": "Allahu Akbar",
-              "translation_ur": "اللہ سب سے بڑا ہے",
-              "audio_ar": "common_takbeer_ar.mp3"
-            },
-            {
-              "id": "p2",
+              "id": "p_sujood1_tasbeeh_r2",
               "arabic": "سُبْحَانَ رَبِّيَ الْأَعْلَى",
               "transliteration": "Subhana Rabbiyal A'la",
               "translation_ur": "میرا رب پاک ہے، سب سے بلند",

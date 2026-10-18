@@ -1,0 +1,819 @@
+import React, { useState, useRef } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Dimensions,
+  Animated,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
+import { Ionicons, Feather } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Svg, Path } from 'react-native-svg';
+
+import { C, StarryBackground } from '../Onboarding/components/OnboardingShared';
+import { useAuth } from '../../store/hooks';
+import {
+  supabase,
+  isSupabaseConfigured,
+  signInWithGoogleOAuth,
+} from '../../services/supabase';
+
+const { width: SW } = Dimensions.get('window');
+
+interface AuthScreenProps {
+  onSuccess: () => void;
+  onGuestAccess?: () => void;
+}
+
+export const AuthScreen: React.FC<AuthScreenProps> = ({
+  onSuccess,
+  onGuestAccess,
+}) => {
+  const { setCredentials, enterGuestMode } = useAuth();
+
+  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Tab switch animation
+  const tabAnim = useRef(new Animated.Value(0)).current;
+
+  const switchMode = (targetMode: 'signin' | 'signup') => {
+    setErrorMessage(null);
+    setMode(targetMode);
+    Animated.spring(tabAnim, {
+      toValue: targetMode === 'signin' ? 0 : 1,
+      useNativeDriver: true,
+      tension: 100,
+      friction: 12,
+    }).start();
+  };
+
+  // ── Authentication Handlers ──────────────────────────────────────────────────
+
+  const handleEmailAuth = async () => {
+    setErrorMessage(null);
+
+    // Basic Validations
+    if (!email.trim() || !email.includes('@')) {
+      setErrorMessage('Please enter a valid email address.');
+      return;
+    }
+    if (!password || password.length < 6) {
+      setErrorMessage('Password must be at least 6 characters long.');
+      return;
+    }
+
+    if (mode === 'signup') {
+      if (!fullName.trim()) {
+        setErrorMessage('Please enter your full name.');
+        return;
+      }
+      if (password !== confirmPassword) {
+        setErrorMessage('Passwords do not match.');
+        return;
+      }
+    }
+
+    // Check if user has entered real Supabase credentials
+    if (!isSupabaseConfigured()) {
+      Alert.alert(
+        'Supabase Keys Pending',
+        'Your Supabase API keys have not been configured yet.\n\nYou can configure them in "src/services/supabase.ts".\n\nWould you like to test with a simulated demo account or continue as Guest?',
+        [
+          {
+            text: 'Use Demo Login',
+            onPress: () => {
+              setCredentials({
+                user: {
+                  id: 'demo-user-id-123',
+                  email: email.trim(),
+                  fullName: mode === 'signup' ? fullName.trim() : 'SalahWay Believer',
+                },
+                sessionToken: 'demo-session-token',
+              });
+              onSuccess();
+            },
+          },
+          {
+            text: 'Continue as Guest',
+            onPress: handleGuestMode,
+          },
+          { text: 'Cancel', style: 'cancel' },
+        ]
+      );
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      if (mode === 'signin') {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        });
+
+        if (error) throw error;
+
+        if (data?.user) {
+          setCredentials({
+            user: {
+              id: data.user.id,
+              email: data.user.email,
+              fullName:
+                data.user.user_metadata?.full_name ||
+                data.user.email?.split('@')[0] ||
+                'User',
+            },
+            sessionToken: data.session?.access_token,
+          });
+          onSuccess();
+        }
+      } else {
+        // Sign Up
+        const { data, error } = await supabase.auth.signUp({
+          email: email.trim(),
+          password,
+          options: {
+            data: {
+              full_name: fullName.trim(),
+            },
+          },
+        });
+
+        if (error) throw error;
+
+        if (data?.user) {
+          // Check if email confirmation is required by Supabase project settings
+          if (data.session) {
+            setCredentials({
+              user: {
+                id: data.user.id,
+                email: data.user.email,
+                fullName: fullName.trim(),
+              },
+              sessionToken: data.session.access_token,
+            });
+            onSuccess();
+          } else {
+            Alert.alert(
+              'Account Created',
+              'Please check your email inbox to confirm your account, then sign in.',
+              [{ text: 'OK', onPress: () => switchMode('signin') }]
+            );
+          }
+        }
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Authentication failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setErrorMessage(null);
+
+    if (!isSupabaseConfigured()) {
+      Alert.alert(
+        'Supabase Keys Pending',
+        'Google OAuth requires Supabase project setup.\n\nPlease configure your keys in "src/services/supabase.ts" or continue as Guest.',
+        [
+          {
+            text: 'Continue as Guest',
+            onPress: handleGuestMode,
+          },
+          { text: 'OK', style: 'cancel' },
+        ]
+      );
+      return;
+    }
+
+    setIsGoogleLoading(true);
+    try {
+      const res = await signInWithGoogleOAuth();
+      if (res?.user) {
+        setCredentials({
+          user: {
+            id: res.user.id,
+            email: res.user.email,
+            fullName: res.user.user_metadata?.full_name || 'Google User',
+            avatarUrl: res.user.user_metadata?.avatar_url,
+          },
+          sessionToken: res.session?.access_token,
+        });
+        onSuccess();
+      }
+    } catch (err: any) {
+      if (err.message) {
+        setErrorMessage(err.message);
+      }
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  };
+
+  const handleGuestMode = () => {
+    enterGuestMode();
+    if (onGuestAccess) {
+      onGuestAccess();
+    } else {
+      onSuccess();
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email.trim() || !email.includes('@')) {
+      Alert.alert('Email Required', 'Please enter your email address above to receive a reset link.');
+      return;
+    }
+
+    if (!isSupabaseConfigured()) {
+      Alert.alert(
+        'Supabase Required',
+        'Configure your Supabase credentials in "src/services/supabase.ts" to send password reset emails.'
+      );
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
+      if (error) throw error;
+      Alert.alert('Reset Link Sent', 'Check your email for the password reset instructions.');
+    } catch (err: any) {
+      Alert.alert('Reset Failed', err.message || 'Could not send reset email.');
+    }
+  };
+
+  const tabTranslateX = tabAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [2, (SW - 48) / 2],
+  });
+
+  return (
+    <View style={styles.container}>
+      <StatusBar style="light" />
+      <StarryBackground />
+
+      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom', 'left', 'right']}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+          {/* Brand Header */}
+          <View style={styles.header}>
+            <View style={styles.logoBadge}>
+              <LinearGradient
+                colors={['#22d3ee', '#3b82f6']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.logoGradient}
+              >
+                <Ionicons name="moon" size={26} color="#ffffff" />
+              </LinearGradient>
+            </View>
+
+            <Text style={styles.appName}>SalahWay</Text>
+            <Text style={styles.tagline}>
+              {mode === 'signin'
+                ? 'Welcome back to your spiritual sanctuary'
+                : 'Begin your journey towards mindful prayer'}
+            </Text>
+          </View>
+
+          {/* Mode Switcher Tabs */}
+          <View style={styles.tabContainer}>
+            <Animated.View
+              style={[
+                styles.tabIndicator,
+                {
+                  transform: [{ translateX: tabTranslateX }],
+                },
+              ]}
+            />
+            <TouchableOpacity
+              style={styles.tabButton}
+              onPress={() => switchMode('signin')}
+              activeOpacity={0.8}
+            >
+              <Text
+                style={[
+                  styles.tabText,
+                  mode === 'signin' && styles.tabTextActive,
+                ]}
+              >
+                Sign In
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.tabButton}
+              onPress={() => switchMode('signup')}
+              activeOpacity={0.8}
+            >
+              <Text
+                style={[
+                  styles.tabText,
+                  mode === 'signup' && styles.tabTextActive,
+                ]}
+              >
+                Sign Up
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Error Banner */}
+          {errorMessage && (
+            <View style={styles.errorBanner}>
+              <Ionicons name="alert-circle" size={18} color="#ef4444" />
+              <Text style={styles.errorText}>{errorMessage}</Text>
+            </View>
+          )}
+
+          {/* Form Card */}
+          <View style={styles.card}>
+            {/* Full Name field (Sign Up only) */}
+            {mode === 'signup' && (
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Full Name</Text>
+                <View style={styles.inputBox}>
+                  <Feather name="user" size={18} color={C.cyan} style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="Enter your name"
+                    placeholderTextColor="rgba(255,255,255,0.3)"
+                    value={fullName}
+                    onChangeText={setFullName}
+                    autoCapitalize="words"
+                    returnKeyType="next"
+                  />
+                </View>
+              </View>
+            )}
+
+            {/* Email field */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Email Address</Text>
+              <View style={styles.inputBox}>
+                <Feather name="mail" size={18} color={C.cyan} style={styles.inputIcon} />
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="name@example.com"
+                  placeholderTextColor="rgba(255,255,255,0.3)"
+                  value={email}
+                  onChangeText={setEmail}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  returnKeyType="next"
+                />
+              </View>
+            </View>
+
+            {/* Password field */}
+            <View style={styles.inputGroup}>
+              <View style={styles.passwordLabelRow}>
+                <Text style={styles.inputLabel}>Password</Text>
+                {mode === 'signin' && (
+                  <TouchableOpacity onPress={handleForgotPassword}>
+                    <Text style={styles.forgotPasswordText}>Forgot?</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+              <View style={styles.inputBox}>
+                <Feather name="lock" size={18} color={C.cyan} style={styles.inputIcon} />
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="At least 6 characters"
+                  placeholderTextColor="rgba(255,255,255,0.3)"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                  returnKeyType={mode === 'signup' ? 'next' : 'done'}
+                  onSubmitEditing={mode === 'signin' ? handleEmailAuth : undefined}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  style={styles.eyeBtn}
+                >
+                  <Ionicons
+                    name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                    size={20}
+                    color="rgba(255,255,255,0.5)"
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Confirm Password field (Sign Up only) */}
+            {mode === 'signup' && (
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Confirm Password</Text>
+                <View style={styles.inputBox}>
+                  <Feather name="shield" size={18} color={C.cyan} style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.textInput}
+                    placeholder="Repeat your password"
+                    placeholderTextColor="rgba(255,255,255,0.3)"
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
+                    secureTextEntry={!showConfirmPassword}
+                    autoCapitalize="none"
+                    returnKeyType="done"
+                    onSubmitEditing={handleEmailAuth}
+                  />
+                  <TouchableOpacity
+                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                    style={styles.eyeBtn}
+                  >
+                    <Ionicons
+                      name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'}
+                      size={20}
+                      color="rgba(255,255,255,0.5)"
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+
+            {/* Primary Submit Button */}
+            <TouchableOpacity
+              style={styles.primaryBtn}
+              onPress={handleEmailAuth}
+              disabled={isLoading || isGoogleLoading}
+              activeOpacity={0.85}
+            >
+              <LinearGradient
+                colors={['#22d3ee', '#2563eb']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.primaryBtnGradient}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="#ffffff" size="small" />
+                ) : (
+                  <Text style={styles.primaryBtnText}>
+                    {mode === 'signin' ? 'Sign In' : 'Create Account'}
+                  </Text>
+                )}
+              </LinearGradient>
+            </TouchableOpacity>
+
+            {/* Divider */}
+            <View style={styles.dividerRow}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>or continue with</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            {/* Continue with Google Button */}
+            <TouchableOpacity
+              style={styles.googleBtn}
+              onPress={handleGoogleSignIn}
+              disabled={isLoading || isGoogleLoading}
+              activeOpacity={0.8}
+            >
+              {isGoogleLoading ? (
+                <ActivityIndicator color="#ffffff" size="small" />
+              ) : (
+                <View style={styles.googleBtnInner}>
+                  <Svg width={20} height={20} viewBox="0 0 48 48">
+                    <Path
+                      fill="#EA4335"
+                      d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
+                    />
+                    <Path
+                      fill="#4285F4"
+                      d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
+                    />
+                    <Path
+                      fill="#FBBC05"
+                      d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
+                    />
+                    <Path
+                      fill="#34A853"
+                      d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
+                    />
+                  </Svg>
+                  <Text style={styles.googleBtnText}>Continue with Google</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
+            {/* Guest Mode Card / Button */}
+            <TouchableOpacity
+              style={styles.guestBtn}
+              onPress={handleGuestMode}
+              activeOpacity={0.8}
+            >
+              <View style={styles.guestInner}>
+                <View style={styles.guestIconBadge}>
+                  <Ionicons name="sparkles" size={16} color={C.cyan} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.guestTitle}>Continue as Guest</Text>
+                  <Text style={styles.guestSub}>
+                    Explore prayers, Quran, and tools without an account
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.4)" />
+              </View>
+            </TouchableOpacity>
+          </View>
+
+          {/* Footer note */}
+          <Text style={styles.footerNote}>
+            Your data is stored securely. By continuing, you agree to our spiritual community guidelines.
+          </Text>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: C.bg,
+  },
+  safeArea: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 40,
+    alignItems: 'center',
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  logoBadge: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    overflow: 'hidden',
+    marginBottom: 14,
+    shadowColor: C.cyan,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  logoGradient: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  appName: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#ffffff',
+    letterSpacing: 0.5,
+    marginBottom: 6,
+  },
+  tagline: {
+    fontSize: 14,
+    color: C.textSecondary,
+    textAlign: 'center',
+    maxWidth: 280,
+    lineHeight: 20,
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    width: '100%',
+    height: 48,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    position: 'relative',
+    marginBottom: 20,
+    alignItems: 'center',
+  },
+  tabIndicator: {
+    position: 'absolute',
+    width: (SW - 48 - 4) / 2,
+    height: 40,
+    backgroundColor: C.bgCardLight,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: C.border,
+  },
+  tabButton: {
+    flex: 1,
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1,
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.5)',
+  },
+  tabTextActive: {
+    color: '#ffffff',
+    fontWeight: '700',
+  },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.4)',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    width: '100%',
+    marginBottom: 16,
+    gap: 10,
+  },
+  errorText: {
+    color: '#fca5a5',
+    fontSize: 13,
+    flex: 1,
+    lineHeight: 18,
+  },
+  card: {
+    width: '100%',
+    backgroundColor: C.bgCard,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: C.border,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 6,
+  },
+  inputGroup: {
+    marginBottom: 16,
+  },
+  passwordLabelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  inputLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.8)',
+    marginBottom: 8,
+  },
+  forgotPasswordText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: C.cyan,
+    marginBottom: 8,
+  },
+  inputBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    paddingHorizontal: 14,
+    height: 50,
+  },
+  inputIcon: {
+    marginRight: 10,
+  },
+  textInput: {
+    flex: 1,
+    color: '#ffffff',
+    fontSize: 15,
+    height: '100%',
+  },
+  eyeBtn: {
+    padding: 6,
+  },
+  primaryBtn: {
+    marginTop: 6,
+    borderRadius: 14,
+    overflow: 'hidden',
+    height: 52,
+    shadowColor: C.cyan,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  primaryBtnGradient: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  primaryBtnText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+  },
+  dividerText: {
+    color: C.textMuted,
+    fontSize: 12,
+    paddingHorizontal: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  googleBtn: {
+    height: 50,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  googleBtnInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  googleBtnText: {
+    color: '#ffffff',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  guestBtn: {
+    borderRadius: 14,
+    backgroundColor: 'rgba(34, 211, 238, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(34, 211, 238, 0.25)',
+    padding: 12,
+  },
+  guestInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  guestIconBadge: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(34, 211, 238, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  guestTitle: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  guestSub: {
+    color: C.textSecondary,
+    fontSize: 11,
+    lineHeight: 14,
+  },
+  footerNote: {
+    color: C.textMuted,
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 24,
+    lineHeight: 18,
+    paddingHorizontal: 16,
+  },
+});
