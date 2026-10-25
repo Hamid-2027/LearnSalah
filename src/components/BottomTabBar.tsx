@@ -58,19 +58,19 @@ export const CustomBottomTabBar: React.FC<BottomTabBarProps> = ({
         const renderIcon = (focused: boolean) => {
           const activeColor = isDarkMode ? '#D4AF37' : '#FFFFFF';
           const inactiveColor = isDarkMode ? '#60A5FA' : '#1D4ED8';
-          
+
           const iconColor = focused ? activeColor : inactiveColor;
           const size = 20;
 
           if (route.name === 'Learn' || route.name === 'Quran') {
             return <MaterialCommunityIcons name={focused ? "school" : "school-outline"} size={size} color={iconColor} />;
-          } else if (route.name === 'Prayer' || route.name === 'PrayerTimes') {
+          } else if (route.name === 'PrayerTimes') {
             return <MaterialCommunityIcons name={focused ? "clock-time-four" : "clock-time-four-outline"} size={size} color={iconColor} />;
           } else if (route.name === 'Hadith') {
             return <MaterialCommunityIcons name={focused ? "star-four-points" : "star-four-points-outline"} size={size} color={iconColor} />;
           } else if (route.name === 'Home') {
             return <Ionicons name={focused ? "home" : "home-outline"} size={size} color={iconColor} />;
-          } else if (route.name === 'Ibadaat') {
+          } else if (route.name === 'Prayer') {
             return <MaterialCommunityIcons name={focused ? "mosque" : "mosque"} size={size} color={iconColor} />;
           } else if (route.name === 'More') {
             return (

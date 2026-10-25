@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import { store, persistor } from './src/store';
@@ -39,15 +41,19 @@ export default function App() {
     return <SplashScreenComponent onLayout={hideSplash} />;
   }
 
-  // Show main app with navigator stack wrapped in Redux Provider & PersistGate
+  // Show main app with navigator stack wrapped in GestureHandler, Redux & BottomSheetModalProvider
   return (
-    <Provider store={store}>
-      <PersistGate loading={<SplashScreenComponent onLayout={() => {}} />} persistor={persistor}>
-        <SafeAreaProvider>
-          <AppNavigator />
-        </SafeAreaProvider>
-      </PersistGate>
-    </Provider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <Provider store={store}>
+        <PersistGate loading={<SplashScreenComponent onLayout={() => {}} />} persistor={persistor}>
+          <SafeAreaProvider>
+            <BottomSheetModalProvider>
+              <AppNavigator />
+            </BottomSheetModalProvider>
+          </SafeAreaProvider>
+        </PersistGate>
+      </Provider>
+    </GestureHandlerRootView>
   );
 }
 

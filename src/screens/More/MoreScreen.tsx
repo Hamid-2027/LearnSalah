@@ -22,6 +22,7 @@ import { BlurView } from 'expo-blur';
 import { useTheme, useSidebar, useUserPreferences, useAuth } from '../../store/hooks';
 import { IslamicSect, UserGender } from '../../store/slices/userPreferencesSlice';
 import { SECT_METHOD_LABELS } from '../../constants/userPreferences';
+import { AppOptionPickerSheet } from '../../components/common/AppOptionPickerSheet';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -51,7 +52,7 @@ const LEARN_CARDS = [
     id: 'daily_dua',
     label: 'Everyday Duas',
     sublabel: 'Daily supplications',
-    icon: 'hands-as-one',
+    icon: 'hands-pray',
     iconType: 'mci',
     color: '#3B82F6',
     bgLight: '#EFF6FF',
@@ -150,8 +151,6 @@ export const MoreScreen: React.FC<{ navigation?: any }> = ({ navigation }) => {
   // Bottom sheet state
   const [sheetConfig, setSheetConfig] = useState<BottomSheetConfig | null>(null);
   const [sheetVisible, setSheetVisible] = useState(false);
-  const slideAnim = useRef(new Animated.Value(0)).current;
-  const backdropAnim = useRef(new Animated.Value(0)).current;
 
   const accent = isDarkMode ? '#60A5FA' : '#2563EB';
   const accentSoft = isDarkMode ? 'rgba(59, 130, 246, 0.15)' : 'rgba(37, 99, 235, 0.08)';
@@ -181,22 +180,11 @@ export const MoreScreen: React.FC<{ navigation?: any }> = ({ navigation }) => {
   const openSheet = (config: BottomSheetConfig) => {
     setSheetConfig(config);
     setSheetVisible(true);
-    slideAnim.setValue(0);
-    backdropAnim.setValue(0);
-    Animated.parallel([
-      Animated.spring(slideAnim, { toValue: 1, useNativeDriver: true, tension: 65, friction: 11 }),
-      Animated.timing(backdropAnim, { toValue: 1, duration: 220, useNativeDriver: true }),
-    ]).start();
   };
 
   const closeSheet = () => {
-    Animated.parallel([
-      Animated.timing(slideAnim, { toValue: 0, duration: 220, useNativeDriver: true }),
-      Animated.timing(backdropAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
-    ]).start(() => {
-      setSheetVisible(false);
-      setSheetConfig(null);
-    });
+    setSheetVisible(false);
+    setSheetConfig(null);
   };
 
   const handleSheetSelect = (value: string) => {
@@ -325,10 +313,6 @@ export const MoreScreen: React.FC<{ navigation?: any }> = ({ navigation }) => {
   const schoolLabel = `${sect} · ${school}`;
   const methodLabel = SECT_METHOD_LABELS[preferences.sect];
 
-  const translateY = slideAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [500, 0],
-  });
 
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
@@ -579,111 +563,16 @@ export const MoreScreen: React.FC<{ navigation?: any }> = ({ navigation }) => {
         )}
       </ScrollView>
 
-      {/* ── Bottom Sheet Modal for Pickers ── */}
-      <Modal visible={sheetVisible} transparent animationType="none" statusBarTranslucent onRequestClose={closeSheet}>
-        <Animated.View style={[styles.backdrop, { opacity: backdropAnim }]}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={closeSheet} />
-        </Animated.View>
-
-        <Animated.View
-          style={[
-            styles.sheet,
-            {
-              backgroundColor: isDarkMode ? '#1E293B' : '#FFFFFF',
-              transform: [{ translateY }],
-              paddingBottom: Math.max(insets.bottom, 24),
-            },
-          ]}
-        >
-          <View style={[styles.sheetHandle, { backgroundColor: isDarkMode ? '#475569' : '#CBD5E1' }]} />
-
-          {sheetConfig && (
-            <>
-              <View style={styles.sheetHeader}>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.sheetTitle, { color: isDarkMode ? '#F8FAFC' : '#0F172A' }]}>
-                    {sheetConfig.title}
-                  </Text>
-                  {sheetConfig.subtitle ? (
-                    <Text style={[styles.sheetSubtitle, { color: colors.textSecondary }]}>
-                      {sheetConfig.subtitle}
-                    </Text>
-                  ) : null}
-                </View>
-                <TouchableOpacity
-                  onPress={closeSheet}
-                  style={[styles.sheetCloseBtn, { backgroundColor: isDarkMode ? '#334155' : '#F1F5F9' }]}
-                >
-                  <Ionicons name="close" size={18} color={colors.textSecondary} />
-                </TouchableOpacity>
-              </View>
-
-              <View style={[styles.sheetDivider, { backgroundColor: colors.border }]} />
-
-              <ScrollView style={styles.sheetScroll} showsVerticalScrollIndicator={false} bounces={false}>
-                {sheetConfig.options.map((opt, idx) => {
-                  const isSelected = opt.value === sheetConfig.selected;
-                  const isLast = idx === sheetConfig.options.length - 1;
-                  return (
-                    <TouchableOpacity
-                      key={opt.value}
-                      activeOpacity={0.7}
-                      onPress={() => handleSheetSelect(opt.value)}
-                      style={[
-                        styles.optionRow,
-                        !isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
-                        isSelected && { backgroundColor: accent + '12' },
-                      ]}
-                    >
-                      <View style={styles.optionLeft}>
-                        {opt.icon ? (
-                          <View
-                            style={[
-                              styles.optionIconCircle,
-                              { backgroundColor: isSelected ? accent + '20' : isDarkMode ? '#334155' : '#F1F5F9' },
-                            ]}
-                          >
-                            <Text style={[styles.optionIconText, { color: isSelected ? accent : colors.textSecondary }]}>
-                              {opt.icon}
-                            </Text>
-                          </View>
-                        ) : null}
-                        <View style={styles.optionTextGroup}>
-                          <Text
-                            style={[
-                              styles.optionLabel,
-                              {
-                                color: isSelected ? accent : colors.textPrimary,
-                                fontWeight: isSelected ? '700' : '500',
-                              },
-                            ]}
-                          >
-                            {opt.label}
-                          </Text>
-                          {opt.subtitle ? (
-                            <Text style={[styles.optionSubtitle, { color: colors.textSecondary }]}>
-                              {opt.subtitle}
-                            </Text>
-                          ) : null}
-                        </View>
-                      </View>
-
-                      <View
-                        style={[
-                          styles.radioOuter,
-                          { borderColor: isSelected ? accent : isDarkMode ? '#475569' : '#CBD5E1' },
-                        ]}
-                      >
-                        {isSelected && <View style={[styles.radioInner, { backgroundColor: accent }]} />}
-                      </View>
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
-            </>
-          )}
-        </Animated.View>
-      </Modal>
+      {/* ── Bottom Sheet Modal for Pickers using @gorhom/bottom-sheet ── */}
+      <AppOptionPickerSheet
+        visible={sheetVisible}
+        onClose={closeSheet}
+        title={sheetConfig?.title || ''}
+        subtitle={sheetConfig?.subtitle}
+        options={sheetConfig?.options || []}
+        selected={sheetConfig?.selected}
+        onSelect={handleSheetSelect}
+      />
 
       {/* ── Glassmorphism Lock Overlay UI ── */}
       <View style={StyleSheet.absoluteFillObject} pointerEvents="auto">

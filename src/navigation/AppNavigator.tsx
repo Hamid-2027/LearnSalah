@@ -11,6 +11,7 @@ import { IbadaatScreen } from '../screens/Ibadaat/IbadaatScreen';
 import { MoreScreen } from '../screens/More/MoreScreen';
 import { OnboardingScreen } from '../screens/Onboarding/OnboardingScreen';
 import { AuthScreen } from '../screens/Auth/AuthScreen';
+import { PrivacyScreen } from '../screens/Privacy/PrivacyScreen';
 import { PrayerScreen } from '../screens/PrayerScreen';
 import { QiblaScreen } from '../screens/Qibla/QiblaScreen';
 import { PrayerTimesScreen } from '../screens/PrayerTimes/PrayerTimesScreen';
@@ -22,10 +23,11 @@ import { resetOnboarding } from '../store/slices/onboardingSlice';
 export type RootStackParamList = {
   Onboarding: undefined;
   Auth: undefined;
+  Privacy: undefined;
   MainTabs: undefined;
   PrayerGuide: { prayerId?: string } | undefined;
   Qibla: undefined;
-  LessonsList: { level: string };
+  LessonsList: { level: string; moduleId?: string; initialStepId?: string } | undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -41,8 +43,8 @@ function MainTabNavigator() {
         headerShown: false,
       }}
     >
+      <Tab.Screen name="PrayerTimes" component={PrayerTimesScreen} options={{ tabBarLabel: 'Time' }} />
       <Tab.Screen name="Learn" component={LearnScreen} />
-      <Tab.Screen name="Prayer" component={PrayerTimesScreen} options={{ tabBarLabel: 'Prayer' }} />
       <Tab.Screen name="Home">
         {(props) => (
           <HomeScreen
@@ -54,7 +56,7 @@ function MainTabNavigator() {
           />
         )}
       </Tab.Screen>
-      <Tab.Screen name="Ibadaat" component={IbadaatScreen} />
+      <Tab.Screen name="Prayer" component={IbadaatScreen} options={{ tabBarLabel: 'Prayer' }} />
       <Tab.Screen name="More" component={MoreScreen} />
     </Tab.Navigator>
   );
@@ -72,8 +74,8 @@ function AppWithSidebar() {
   const initialRoute: keyof RootStackParamList = !isOnboardingComplete
     ? 'Onboarding'
     : isAuthenticated || isGuest
-    ? 'MainTabs'
-    : 'Auth';
+      ? 'MainTabs'
+      : 'Auth';
 
   return (
     <View style={{ flex: 1 }}>
@@ -99,7 +101,11 @@ function AppWithSidebar() {
         {/* Custom Supabase Auth Screen */}
         <Stack.Screen
           name="Auth"
-          options={{ headerShown: false }}
+          options={{
+            headerShown: false,
+            presentation: 'card',
+            animation: 'slide_from_bottom',
+          }}
         >
           {(props) => (
             <AuthScreen
@@ -108,6 +114,17 @@ function AppWithSidebar() {
             />
           )}
         </Stack.Screen>
+
+        {/* Privacy Policy Screen */}
+        <Stack.Screen
+          name="Privacy"
+          component={PrivacyScreen}
+          options={{
+            headerShown: false,
+            presentation: 'card',
+            animation: 'slide_from_right',
+          }}
+        />
 
         <Stack.Screen
           name="MainTabs"

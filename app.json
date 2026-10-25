@@ -1,7 +1,8 @@
 {
   "expo": {
-    "name": "Salah Way",
-    "slug": "Salah-Way",
+    "name": "Salah 786",
+    "slug": "Salah786",
+    "scheme": "salah786",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./src/assets/images/app_logo.png",
@@ -35,7 +36,7 @@
         "backgroundColor": "#FFF8F3",
         "tabletImage": "./src/assets/images/app_logo.png"
       },
-      "bundleIdentifier": "com.salahway.app"
+      "bundleIdentifier": "com.salah786.app"
     },
     "android": {
       "adaptiveIcon": {
@@ -47,9 +48,12 @@
         "resizeMode": "contain",
         "backgroundColor": "#FFF8F3"
       },
-      "package": "com.salahway.app",
+      "package": "com.salah786.app",
       "versionCode": 1,
-      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"],
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ],
       "softwareKeyboardLayoutMode": "pan"
     },
     "web": {

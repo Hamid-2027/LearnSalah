@@ -18,6 +18,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Svg, Path } from 'react-native-svg';
+import { useNavigation } from '@react-navigation/native';
 
 import { C, StarryBackground } from '../Onboarding/components/OnboardingShared';
 import { useAuth } from '../../store/hooks';
@@ -38,6 +39,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
   onSuccess,
   onGuestAccess,
 }) => {
+  const navigation = useNavigation();
   const { setCredentials, enterGuestMode } = useAuth();
 
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
@@ -105,7 +107,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                 user: {
                   id: 'demo-user-id-123',
                   email: email.trim(),
-                  fullName: mode === 'signup' ? fullName.trim() : 'SalahWay Believer',
+                  fullName: mode === 'signup' ? fullName.trim() : 'salah786 Believer',
                 },
                 sessionToken: 'demo-session-token',
               });
@@ -273,7 +275,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
       <StatusBar style="light" />
       <StarryBackground />
 
-      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom', 'left', 'right']}>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
         <KeyboardAvoidingView
           style={{ flex: 1 }}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -283,6 +285,17 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
+          {/* Close Button */}
+          <View style={styles.closeButtonContainer}>
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={styles.closeButton}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="close" size={24} color="rgba(255,255,255,0.6)" />
+            </TouchableOpacity>
+          </View>
+
           {/* Brand Header */}
           <View style={styles.header}>
             <View style={styles.logoBadge}>
@@ -296,7 +309,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
               </LinearGradient>
             </View>
 
-            <Text style={styles.appName}>SalahWay</Text>
+            <Text style={styles.appName}>salah786</Text>
             <Text style={styles.tagline}>
               {mode === 'signin'
                 ? 'Welcome back to your spiritual sanctuary'
@@ -545,9 +558,20 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
           </View>
 
           {/* Footer note */}
-          <Text style={styles.footerNote}>
-            Your data is stored securely. By continuing, you agree to our spiritual community guidelines.
-          </Text>
+          <View style={styles.footerContainer}>
+            <Text style={styles.footerNote}>
+              Your data is stored securely. By continuing, you agree to our
+            </Text>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('Privacy' as never)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.privacyLink}>Privacy Policy</Text>
+            </TouchableOpacity>
+            <Text style={styles.footerNote}>
+              {' '}and spiritual community guidelines.
+            </Text>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -565,9 +589,23 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 24,
-    paddingTop: 16,
+    paddingTop: 20,
     paddingBottom: 40,
     alignItems: 'center',
+    flexGrow: 1,
+  },
+  closeButtonContainer: {
+    width: '100%',
+    alignItems: 'flex-end',
+    marginBottom: 8,
+  },
+  closeButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   header: {
     alignItems: 'center',
@@ -808,12 +846,24 @@ const styles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 14,
   },
+  footerContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 24,
+    paddingHorizontal: 16,
+  },
   footerNote: {
     color: C.textMuted,
     fontSize: 12,
     textAlign: 'center',
-    marginTop: 24,
     lineHeight: 18,
-    paddingHorizontal: 16,
+  },
+  privacyLink: {
+    color: C.cyan,
+    fontSize: 12,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
 });

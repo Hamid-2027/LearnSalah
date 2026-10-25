@@ -279,7 +279,7 @@ export const PrayerSimulation: React.FC<PrayerSimulationProps> = ({ prayerData }
             <View style={[styles.liveTag, { backgroundColor: colors.surfaceSecondary, borderColor: accentColor }]}>
               <View style={[styles.liveDot, { backgroundColor: isPlaying ? '#4CD964' : '#FF9500' }]} />
               <Text style={[styles.liveTagText, { color: accentColor }]}>
-                {isPlaying ? 'SIMULATION RUNNING' : 'PAUSED'}
+                {isPlaying ? 'AUTOPLAYING' : 'PAUSED'}
               </Text>
             </View>
 

@@ -62,7 +62,7 @@ export const PrayerScreen = ({ navigation, route }: any) => {
             {prayerData.title.en}
           </Text>
           <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
-            {activeTab === 'guided' ? 'Guided Audio Recitation' : 'Pose Pattern Simulation'}
+            {activeTab === 'guided' ? 'Guided Audio Recitation' : 'Step-by-Step Prayer Motions'}
           </Text>
         </View>
 
@@ -108,7 +108,7 @@ export const PrayerScreen = ({ navigation, route }: any) => {
             </Text>
           </TouchableOpacity>
 
-          {/* Tab 2: Pose Simulation */}
+          {/* Tab 2: Visual Guide */}
           <TouchableOpacity
             activeOpacity={0.8}
             onPress={() => setActiveTab('simulation')}
@@ -121,7 +121,7 @@ export const PrayerScreen = ({ navigation, route }: any) => {
             ]}
           >
             <Ionicons
-              name="body-outline"
+              name="sparkles-outline"
               size={17}
               color={activeTab === 'simulation' ? colors.primary : colors.textSecondary}
               style={{ marginRight: 6 }}
@@ -135,7 +135,7 @@ export const PrayerScreen = ({ navigation, route }: any) => {
                 },
               ]}
             >
-              Pose Simulation
+              Visual Guide
             </Text>
           </TouchableOpacity>
         </View>

@@ -65,12 +65,14 @@ export async function signInWithGoogleOAuth() {
     );
   }
 
-  const redirectUrl = 'salahway://auth/callback';
+  // Deep link that Supabase will redirect to AFTER it processes the OAuth callback.
+  // This must also be registered in your Supabase Redirect URLs dashboard.
+  const appDeepLink = 'salah786://auth/callback';
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: redirectUrl,
+      redirectTo: appDeepLink,
       skipBrowserRedirect: true,
     },
   });
@@ -78,7 +80,7 @@ export async function signInWithGoogleOAuth() {
   if (error) throw error;
   if (!data?.url) throw new Error('No authorization URL returned from Supabase.');
 
-  const res = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
+  const res = await WebBrowser.openAuthSessionAsync(data.url, appDeepLink);
 
   if (res.type === 'success' && res.url) {
     const params = extractParamsFromUrl(res.url);

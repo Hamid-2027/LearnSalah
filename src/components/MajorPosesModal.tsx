@@ -258,7 +258,7 @@ export const MajorPosesModal: React.FC<MajorPosesModalProps> = ({
       try {
         await soundRef.current.stopAsync();
         await soundRef.current.unloadAsync();
-      } catch (_) {}
+      } catch (_) { }
       soundRef.current = null;
     }
     setIsPlayingAudio(false);
@@ -279,7 +279,7 @@ export const MajorPosesModal: React.FC<MajorPosesModalProps> = ({
   const playAudio = async (audioKey: string) => {
     if (isPlayingAudio) {
       if (soundRef.current) {
-        await soundRef.current.pauseAsync().catch(() => {});
+        await soundRef.current.pauseAsync().catch(() => { });
         setIsPlayingAudio(false);
       }
       return;
@@ -312,7 +312,7 @@ export const MajorPosesModal: React.FC<MajorPosesModalProps> = ({
       );
 
       if (soundInstanceIdRef.current !== myId) {
-        sound.unloadAsync().catch(() => {});
+        sound.unloadAsync().catch(() => { });
         return;
       }
 
@@ -344,7 +344,7 @@ export const MajorPosesModal: React.FC<MajorPosesModalProps> = ({
       const newRate = MODAL_SPEED_PRESETS[currentIdx - 1];
       setPlaybackRate(newRate);
       if (soundRef.current) {
-        soundRef.current.setRateAsync(newRate, true, Audio.PitchCorrectionQuality.High).catch(() => {});
+        soundRef.current.setRateAsync(newRate, true, Audio.PitchCorrectionQuality.High).catch(() => { });
       }
     }
   };
@@ -355,7 +355,7 @@ export const MajorPosesModal: React.FC<MajorPosesModalProps> = ({
       const newRate = MODAL_SPEED_PRESETS[currentIdx + 1];
       setPlaybackRate(newRate);
       if (soundRef.current) {
-        soundRef.current.setRateAsync(newRate, true, Audio.PitchCorrectionQuality.High).catch(() => {});
+        soundRef.current.setRateAsync(newRate, true, Audio.PitchCorrectionQuality.High).catch(() => { });
       }
     }
   };
@@ -364,9 +364,50 @@ export const MajorPosesModal: React.FC<MajorPosesModalProps> = ({
     const newLoop = !isLooping;
     setIsLooping(newLoop);
     if (soundRef.current) {
-      soundRef.current.setIsLoopingAsync(newLoop).catch(() => {});
+      soundRef.current.setIsLoopingAsync(newLoop).catch(() => { });
     }
   };
+
+  // ── Learn Tab Theme (Dynamic for Light & Dark Mode) ─────────────────────────
+  const THEME = isDarkMode
+    ? {
+      bg: '#020B1C',
+      cardBg: '#05142E',
+      cardBgActive: '#0A2552',
+      cardInner: '#020A1A',
+      border: '#183B70',
+      borderSubtle: 'rgba(255, 255, 255, 0.08)',
+      accent: '#3B82F6',
+      accentLight: '#60A5FA',
+      accentSoft: 'rgba(96, 165, 250, 0.15)',
+      textPrimary: '#FFFFFF',
+      textSecondary: '#94A3B8',
+      closeBtnBg: 'rgba(255, 255, 255, 0.08)',
+      closeBtnBorder: 'rgba(255, 255, 255, 0.12)',
+      audioTrackBg: 'rgba(255, 255, 255, 0.08)',
+      pillBg: 'rgba(255, 255, 255, 0.05)',
+      poseCardBadgeBg: 'rgba(2, 11, 28, 0.85)',
+      shadowColor: '#000000',
+    }
+    : {
+      bg: '#F8FAFC',
+      cardBg: '#FFFFFF',
+      cardBgActive: '#EFF6FF',
+      cardInner: '#F1F5F9',
+      border: '#E2E8F0',
+      borderSubtle: 'rgba(0, 0, 0, 0.06)',
+      accent: '#2563EB',
+      accentLight: '#2563EB',
+      accentSoft: '#EFF6FF',
+      textPrimary: '#0F172A',
+      textSecondary: '#64748B',
+      closeBtnBg: '#F1F5F9',
+      closeBtnBorder: '#E2E8F0',
+      audioTrackBg: '#E2E8F0',
+      pillBg: '#F8FAFC',
+      poseCardBadgeBg: 'rgba(15, 23, 42, 0.75)',
+      shadowColor: '#64748B',
+    };
 
   if (!visible) return null;
 
@@ -378,7 +419,7 @@ export const MajorPosesModal: React.FC<MajorPosesModalProps> = ({
       statusBarTranslucent={true}
       onRequestClose={onClose}
     >
-      <View style={[styles.modalRoot, { backgroundColor: colors.background }]}>
+      <View style={[styles.modalRoot, { backgroundColor: THEME.bg }]}>
         <StatusBar style={isDarkMode ? 'light' : 'dark'} translucent={true} backgroundColor="transparent" />
 
         {/* Top Header Bar with dynamic safe area inset padding */}
@@ -386,20 +427,20 @@ export const MajorPosesModal: React.FC<MajorPosesModalProps> = ({
           style={[
             styles.modalHeader,
             {
-              backgroundColor: colors.surface,
-              borderBottomColor: colors.border,
+              backgroundColor: THEME.bg,
+              borderBottomColor: THEME.borderSubtle,
               paddingTop: topInset + 8,
             },
           ]}
         >
           <View style={{ flex: 1, paddingRight: 8 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Ionicons name="sparkles" size={17} color={accentColor} />
-              <Text style={[styles.modalHeaderTitle, { color: colors.textPrimary }]} numberOfLines={1}>
+              <Ionicons name="sparkles" size={17} color={THEME.accentLight} />
+              <Text style={[styles.modalHeaderTitle, { color: THEME.textPrimary }]} numberOfLines={1}>
                 Major Poses & Recitations
               </Text>
             </View>
-            <Text style={[styles.modalHeaderSubtitle, { color: colors.textSecondary }]}>
+            <Text style={[styles.modalHeaderSubtitle, { color: THEME.textSecondary }]}>
               ارکانِ نماز اور تلاوت • 6 Core Salah Postures
             </Text>
           </View>
@@ -408,127 +449,116 @@ export const MajorPosesModal: React.FC<MajorPosesModalProps> = ({
             onPress={onClose}
             activeOpacity={0.7}
             hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
-            style={[styles.closeBtn, { backgroundColor: colors.surfaceSecondary, borderColor: colors.border }]}
+            style={[styles.closeBtn, { backgroundColor: THEME.closeBtnBg, borderColor: THEME.closeBtnBorder }]}
           >
-            <Ionicons name="close" size={20} color={colors.textPrimary} />
+            <Ionicons name="close" size={20} color={THEME.textPrimary} />
           </TouchableOpacity>
         </View>
 
-          {/* Compact Pose Card Selector */}
-          <View style={[styles.poseCardStrip, { backgroundColor: colors.background, borderBottomColor: colors.border }]}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.poseCardStripContent}
-            >
-              {MAJOR_POSES.map((pose, index) => {
-                const isSelected = pose.id === activePoseId;
-                return (
-                  <TouchableOpacity
-                    key={pose.id}
-                    onPress={() => setActivePoseId(pose.id)}
-                    activeOpacity={0.8}
-                    style={[
-                      styles.poseBigCard,
-                      {
-                        borderColor: isSelected ? accentColor : colors.border,
-                        shadowColor: isSelected ? accentColor : 'transparent',
-                        elevation: isSelected ? 6 : 1,
-                        transform: [{ scale: isSelected ? 1.0 : 0.96 }],
-                      },
-                    ]}
-                  >
-                    <View style={[styles.poseBigCardInner, { backgroundColor: colors.surface }]}>
-                      {/* Number badge top-left */}
-                      <View style={[styles.poseBigCardNumBadge, { backgroundColor: colors.background + 'CC' }]}>
-                        <Text style={[styles.poseBigCardNumText, { color: isSelected ? accentColor : colors.textSecondary }]}>
-                          {String(index + 1).padStart(2, '0')}
-                        </Text>
-                      </View>
-
-                      {/* Pose image */}
-                      <Image
-                        source={ImageAssets[pose.image]}
-                        style={styles.poseBigCardImage}
-                        resizeMode="cover"
-                      />
-
-                      {/* Bottom gradient label */}
-                      <LinearGradient
-                        colors={isSelected
-                          ? [accentColor + 'BB', accentColor + 'FF']
-                          : ['transparent', colors.surface + 'F5']}
-                        style={styles.poseBigCardGradient}
-                      >
-                        <Text
-                          style={[styles.poseBigCardTitle, { color: isSelected ? '#FFFFFF' : colors.textPrimary }]}
-                          numberOfLines={2}
-                        >
-                          {pose.title.en.split('—')[0].trim()}
-                        </Text>
-                        <Text
-                          style={[styles.poseBigCardUrdu, { color: isSelected ? '#FFFFFFBB' : colors.textSecondary }]}
-                          numberOfLines={1}
-                        >
-                          {pose.title.ur}
-                        </Text>
-                      </LinearGradient>
-
-                      {/* Active glow ring + checkmark */}
-                      {isSelected && (
-                        <View style={[styles.poseBigCardCheckRing, { borderColor: accentColor }]}>
-                          <View style={[styles.poseBigCardCheckDot, { backgroundColor: accentColor }]}>
-                            <Ionicons name="checkmark" size={9} color="#FFFFFF" />
-                          </View>
-                        </View>
-                      )}
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          </View>
-
-          {/* Scrollable Content Body */}
+        {/* ── Single unified ScrollView — thumbnails + content scroll together ── */}
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[styles.scrollBody, { paddingBottom: bottomInset + 30 }]}
+        >
+          {/* Pose Card Selector — scrolls with the page */}
           <ScrollView
-            contentContainerStyle={[styles.scrollBody, { paddingBottom: bottomInset + 30 }]}
-            showsVerticalScrollIndicator={false}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.poseCardStripContent}
+            style={[styles.poseCardStrip, { borderBottomColor: THEME.borderSubtle }]}
           >
+            {MAJOR_POSES.map((pose, index) => {
+              const isSelected = pose.id === activePoseId;
+              return (
+                <TouchableOpacity
+                  key={pose.id}
+                  onPress={() => setActivePoseId(pose.id)}
+                  activeOpacity={0.8}
+                  style={[
+                    styles.poseBigCard,
+                    {
+                      borderColor: isSelected ? THEME.accent : THEME.border,
+                      shadowColor: isSelected ? THEME.accent : 'transparent',
+                      elevation: isSelected ? 4 : 1,
+                      transform: [{ scale: isSelected ? 1.0 : 0.96 }],
+                    },
+                  ]}
+                >
+                  <View style={[styles.poseBigCardInner, { backgroundColor: isSelected ? THEME.cardBgActive : THEME.cardBg }]}>
+                    <View style={[styles.poseBigCardNumBadge, { backgroundColor: isSelected ? THEME.accent : THEME.poseCardBadgeBg }]}>
+                      <Text style={[styles.poseBigCardNumText, { color: '#FFFFFF' }]}>
+                        {String(index + 1).padStart(2, '0')}
+                      </Text>
+                    </View>
+                    <Image
+                      source={ImageAssets[pose.image]}
+                      style={styles.poseBigCardImage}
+                      resizeMode="cover"
+                    />
+                    <LinearGradient
+                      colors={isSelected
+                        ? ['transparent', 'rgba(37, 99, 235, 0.5)', '#1D4ED8']
+                        : isDarkMode
+                          ? ['transparent', 'rgba(2, 11, 28, 0.75)', THEME.cardBg]
+                          : ['transparent', 'rgba(15, 23, 42, 0.65)', 'rgba(15, 23, 42, 0.95)']}
+                      style={styles.poseBigCardGradient}
+                    >
+                      <Text style={[styles.poseBigCardTitle, { color: '#FFFFFF' }]} numberOfLines={2}>
+                        {pose.title.en.split('—')[0].trim()}
+                      </Text>
+                      <Text style={[styles.poseBigCardUrdu, { color: isSelected ? '#E0E7FF' : 'rgba(255,255,255,0.8)' }]} numberOfLines={1}>
+                        {pose.title.ur}
+                      </Text>
+                    </LinearGradient>
+                    {isSelected && (
+                      <View style={[styles.poseBigCardCheckRing, { borderColor: THEME.accentLight }]}>
+                        <View style={[styles.poseBigCardCheckDot, { backgroundColor: THEME.accent }]}>
+                          <Ionicons name="checkmark" size={9} color="#FFFFFF" />
+                        </View>
+                      </View>
+                    )}
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+          <View style={{ paddingHorizontal: 16 }}>
+
             {/* Pose Hero Card */}
-            <View style={[styles.poseHeroCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <View style={[styles.poseHeroCard, { backgroundColor: THEME.cardBg, borderColor: THEME.border, shadowColor: THEME.shadowColor }]}>
               <View style={styles.poseHeroHeader}>
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.poseHeroTitle, { color: colors.textPrimary }]}>
+                  <Text style={[styles.poseHeroTitle, { color: THEME.textPrimary }]}>
                     {activePose.title.en}
                   </Text>
-                  <Text style={[styles.poseHeroSubtitle, { color: colors.textSecondary }]}>
+                  <Text style={[styles.poseHeroSubtitle, { color: THEME.accentLight }]}>
                     {activePose.title.ur}
                   </Text>
                 </View>
-                <View style={[styles.ratioBadge, { backgroundColor: accentColor + '20', borderColor: accentColor }]}>
-                  <Ionicons name="timer-outline" size={13} color={accentColor} style={{ marginRight: 4 }} />
-                  <Text style={[styles.ratioBadgeText, { color: accentColor }]}>{activePose.badge}</Text>
+                <View style={[styles.ratioBadge, { backgroundColor: THEME.accentSoft, borderColor: isDarkMode ? 'rgba(96, 165, 250, 0.35)' : 'rgba(37, 99, 235, 0.25)' }]}>
+                  <Ionicons name="timer-outline" size={13} color={THEME.accentLight} style={{ marginRight: 4 }} />
+                  <Text style={[styles.ratioBadgeText, { color: THEME.accentLight }]}>{activePose.badge}</Text>
                 </View>
               </View>
 
-              <Text style={[styles.poseDescription, { color: colors.textSecondary }]}>
+              <Text style={[styles.poseDescription, { color: THEME.textSecondary }]}>
                 {activePose.description.en} • {activePose.description.ur}
               </Text>
 
               {/* Large Image Frame */}
-              <View style={[styles.imageContainer, { backgroundColor: colors.background }]}>
+              <View style={[styles.imageContainer, { backgroundColor: THEME.cardInner, borderColor: THEME.borderSubtle, borderWidth: 1 }]}>
                 <Image source={ImageAssets[activePose.image]} style={styles.poseImage} resizeMode="contain" />
               </View>
             </View>
 
             {/* Audio Recitation Controller Card */}
-            <View style={[styles.audioCard, { backgroundColor: colors.surfaceSecondary, borderColor: accentColor }]}>
+            <View style={[styles.audioCard, { backgroundColor: THEME.cardBg, borderColor: THEME.border, shadowColor: THEME.shadowColor }]}>
               <View style={styles.audioCardHeader}>
                 <View style={styles.audioTitleGroup}>
-                  <Ionicons name="musical-notes" size={17} color={accentColor} style={{ marginRight: 6 }} />
-                  <Text style={[styles.audioCardTitle, { color: colors.textPrimary }]}>Arabic Audio Recitation</Text>
+                  <Ionicons name="musical-notes" size={17} color={THEME.accentLight} style={{ marginRight: 6 }} />
+                  <Text style={[styles.audioCardTitle, { color: THEME.textPrimary }]}>Arabic Audio Recitation</Text>
                 </View>
-                <Text style={[styles.audioStatusText, { color: accentColor }]}>
+                <Text style={[styles.audioStatusText, { color: THEME.accentLight }]}>
                   {isPlayingAudio ? (isLooping ? 'Looping Audio...' : 'Playing Audio...') : 'Tap Play to Listen'}
                 </Text>
               </View>
@@ -536,7 +566,7 @@ export const MajorPosesModal: React.FC<MajorPosesModalProps> = ({
               {/* Main Play Row */}
               <View style={styles.audioControlsRow}>
                 <TouchableOpacity onPress={() => playAudio(activePose.audioKey)} style={styles.playBtnWrapper}>
-                  <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.playBtnGradient}>
+                  <LinearGradient colors={['#2563EB', '#1D4ED8']} style={styles.playBtnGradient}>
                     <Ionicons
                       name={isPlayingAudio ? 'pause' : 'play'}
                       size={26}
@@ -547,34 +577,36 @@ export const MajorPosesModal: React.FC<MajorPosesModalProps> = ({
                 </TouchableOpacity>
 
                 <View style={styles.audioTrackWrapper}>
-                  <View style={[styles.audioTrack, { backgroundColor: progressBarBg }]}>
-                    <View style={[styles.audioFill, { width: `${audioProgress * 100}%`, backgroundColor: accentColor }]} />
+                  <View style={[styles.audioTrack, { backgroundColor: THEME.audioTrackBg }]}>
+                    <View style={[styles.audioFill, { width: `${audioProgress * 100}%`, backgroundColor: THEME.accent }]} />
                   </View>
-                  <Text style={[styles.audioDescText, { color: colors.textSecondary }]}>
+                  <Text style={[styles.audioDescText, { color: THEME.textSecondary }]}>
                     Listen to clear authentic recitation with Arabic script below
                   </Text>
                 </View>
               </View>
 
               {/* Speed Up, Slow Down & Loop Controls Toolbar */}
-              <View style={[styles.audioToolbar, { borderTopColor: colors.border }]}>
+              <View style={[styles.audioToolbar, { borderTopColor: THEME.borderSubtle }]}>
                 <TouchableOpacity
                   onPress={handleSlowDown}
                   disabled={playbackRate <= 0.5}
                   style={[
                     styles.toolPillBtn,
                     {
-                      backgroundColor: colors.surface,
+                      backgroundColor: THEME.pillBg,
+                      borderColor: THEME.border,
+                      borderWidth: 1,
                       opacity: playbackRate <= 0.5 ? 0.4 : 1,
                     },
                   ]}
                 >
-                  <Ionicons name="remove-circle-outline" size={14} color={accentColor} style={{ marginRight: 4 }} />
-                  <Text style={[styles.toolPillText, { color: accentColor }]}>Slow</Text>
+                  <Ionicons name="remove-circle-outline" size={14} color={THEME.accentLight} style={{ marginRight: 4 }} />
+                  <Text style={[styles.toolPillText, { color: THEME.accentLight }]}>Slow</Text>
                 </TouchableOpacity>
 
-                <View style={[styles.speedBadgePill, { backgroundColor: colors.surface, borderColor: accentColor }]}>
-                  <Text style={[styles.speedBadgeText, { color: accentColor }]}>
+                <View style={[styles.speedBadgePill, { backgroundColor: THEME.accentSoft, borderColor: isDarkMode ? THEME.accent : 'rgba(37, 99, 235, 0.3)' }]}>
+                  <Text style={[styles.speedBadgeText, { color: THEME.accentLight }]}>
                     {playbackRate % 1 === 0 ? `${playbackRate.toFixed(0)}x` : `${playbackRate}x`}
                   </Text>
                 </View>
@@ -585,13 +617,15 @@ export const MajorPosesModal: React.FC<MajorPosesModalProps> = ({
                   style={[
                     styles.toolPillBtn,
                     {
-                      backgroundColor: colors.surface,
+                      backgroundColor: THEME.pillBg,
+                      borderColor: THEME.border,
+                      borderWidth: 1,
                       opacity: playbackRate >= 2.0 ? 0.4 : 1,
                     },
                   ]}
                 >
-                  <Text style={[styles.toolPillText, { color: accentColor }]}>Fast</Text>
-                  <Ionicons name="add-circle-outline" size={14} color={accentColor} style={{ marginLeft: 4 }} />
+                  <Text style={[styles.toolPillText, { color: THEME.accentLight }]}>Fast</Text>
+                  <Ionicons name="add-circle-outline" size={14} color={THEME.accentLight} style={{ marginLeft: 4 }} />
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -599,21 +633,23 @@ export const MajorPosesModal: React.FC<MajorPosesModalProps> = ({
                   style={[
                     styles.loopPillBtn,
                     {
-                      backgroundColor: isLooping ? accentColor : colors.surface,
+                      backgroundColor: isLooping ? THEME.accent : THEME.pillBg,
+                      borderColor: isLooping ? THEME.accent : THEME.border,
+                      borderWidth: 1,
                     },
                   ]}
                 >
                   <Ionicons
                     name="repeat"
                     size={14}
-                    color={isLooping ? '#FFFFFF' : accentColor}
+                    color={isLooping ? '#FFFFFF' : THEME.accentLight}
                     style={{ marginRight: 4 }}
                   />
                   <Text
                     style={[
                       styles.toolPillText,
                       {
-                        color: isLooping ? '#FFFFFF' : accentColor,
+                        color: isLooping ? '#FFFFFF' : THEME.accentLight,
                         fontWeight: isLooping ? '700' : '600',
                       },
                     ]}
@@ -629,29 +665,31 @@ export const MajorPosesModal: React.FC<MajorPosesModalProps> = ({
               {activePose.verses.map((verse, vIdx) => (
                 <View key={`verse_${vIdx}`}>
                   {verse.section_title && (
-                    <View style={[styles.sectionBanner, { backgroundColor: colors.surfaceSecondary, borderColor: accentColor }]}>
-                      <Ionicons name="book-outline" size={14} color={accentColor} style={{ marginRight: 6 }} />
-                      <Text style={[styles.sectionBannerText, { color: accentColor }]}>
+                    <View style={[styles.sectionBanner, { backgroundColor: THEME.accentSoft, borderColor: THEME.accent }]}>
+                      <Ionicons name="book-outline" size={14} color={THEME.accentLight} style={{ marginRight: 6 }} />
+                      <Text style={[styles.sectionBannerText, { color: THEME.accentLight }]}>
                         {verse.section_title}
                       </Text>
                     </View>
                   )}
 
-                  <View style={[styles.verseCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                    <Text style={[styles.arabicText, { color: colors.textPrimary }]}>
+                  <View style={[styles.verseCard, { backgroundColor: THEME.cardBg, borderColor: THEME.border, shadowColor: THEME.shadowColor }]}>
+                    <Text style={[styles.arabicText, { color: THEME.textPrimary }]}>
                       {verse.arabic}
                     </Text>
-                    <Text style={[styles.transliterationText, { color: accentColor }]}>
+                    <Text style={[styles.transliterationText, { color: THEME.accentLight }]}>
                       {verse.transliteration}
                     </Text>
-                    <Text style={[styles.translationUrText, { color: colors.textSecondary }]}>
+                    <Text style={[styles.translationUrText, { color: THEME.textSecondary }]}>
                       {verse.translation_ur}
                     </Text>
                   </View>
                 </View>
               ))}
             </View>
-          </ScrollView>
+          </View>
+
+        </ScrollView>
       </View>
     </Modal>
   );
@@ -666,49 +704,52 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingBottom: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingBottom: 14,
+    borderBottomWidth: 1,
   },
   modalHeaderTitle: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
-    letterSpacing: 0.2,
+    letterSpacing: -0.2,
   },
   modalHeaderSubtitle: {
-    fontSize: 11,
+    fontSize: 11.5,
     marginTop: 2,
   },
   closeBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 8,
   },
   poseCardStrip: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    paddingVertical: 10,
+    borderBottomWidth: 1,
+    paddingVertical: 12,
+    marginBottom: 4,
   },
   poseCardStripContent: {
-    paddingHorizontal: 12,
-    gap: 8,
+    paddingHorizontal: 16,
+    gap: 10,
     alignItems: 'flex-start',
   },
   poseBigCard: {
     width: CARD_WIDTH,
     height: CARD_HEIGHT,
-    borderRadius: 14,
-    borderWidth: 1.5,
+    borderRadius: 18,
+    borderWidth: 1.2,
     overflow: 'hidden',
     shadowOpacity: 0.3,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
   },
   poseBigCardInner: {
     flex: 1,
-    borderRadius: 13,
+    borderRadius: 16.5,
     overflow: 'hidden',
   },
   poseBigCardNumBadge: {
@@ -716,7 +757,7 @@ const styles = StyleSheet.create({
     top: 6,
     left: 6,
     zIndex: 2,
-    paddingHorizontal: 5,
+    paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 6,
   },
@@ -735,12 +776,12 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     paddingHorizontal: 8,
-    paddingTop: 14,
+    paddingTop: 16,
     paddingBottom: 8,
     justifyContent: 'flex-end',
   },
   poseBigCardTitle: {
-    fontSize: 10,
+    fontSize: 10.5,
     fontWeight: '800',
     lineHeight: 13,
     marginBottom: 2,
@@ -770,14 +811,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   scrollBody: {
-    padding: 16,
+    // paddingHorizontal: 16,
+    paddingTop: 4,
     paddingBottom: 40,
+    gap: 12,
   },
   poseHeroCard: {
-    borderRadius: 18,
-    borderWidth: 1,
+    borderRadius: 22,
+    borderWidth: 1.2,
     padding: 16,
-    marginBottom: 14,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 2,
   },
   poseHeroHeader: {
     flexDirection: 'row',
@@ -786,12 +833,14 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   poseHeroTitle: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '700',
+    letterSpacing: -0.2,
   },
   poseHeroSubtitle: {
-    fontSize: 12,
+    fontSize: 13,
     marginTop: 2,
+    fontWeight: '600',
   },
   ratioBadge: {
     flexDirection: 'row',
@@ -806,59 +855,69 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   poseDescription: {
-    fontSize: 12,
+    fontSize: 12.5,
     lineHeight: 18,
-    marginBottom: 12,
+    marginBottom: 14,
   },
   imageContainer: {
     width: '100%',
-    height: 200,
-    borderRadius: 14,
+    height: 220,
+    borderRadius: 16,
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
   },
   poseImage: {
-    width: '90%',
-    height: '90%',
+    width: '92%',
+    height: '92%',
   },
   audioCard: {
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 14,
-    marginBottom: 14,
+    borderRadius: 22,
+    borderWidth: 1.2,
+    padding: 16,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 2,
   },
   audioCardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   audioTitleGroup: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   audioCardTitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
+    letterSpacing: -0.1,
   },
   audioStatusText: {
-    fontSize: 11,
+    fontSize: 11.5,
     fontWeight: '600',
   },
   audioControlsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 14,
   },
   playBtnWrapper: {
-    borderRadius: 25,
+    borderRadius: 26,
     overflow: 'hidden',
+    shadowColor: '#2563EB',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    elevation: 4,
   },
   playBtnGradient: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -876,66 +935,73 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   audioDescText: {
-    fontSize: 11,
+    fontSize: 11.5,
+    lineHeight: 15,
   },
   audioToolbar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 12,
-    paddingTop: 10,
-    borderTopWidth: StyleSheet.hairlineWidth,
+    marginTop: 14,
+    paddingTop: 12,
+    borderTopWidth: 1,
   },
   toolPillBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 12,
   },
   toolPillText: {
-    fontSize: 11,
+    fontSize: 11.5,
     fontWeight: '600',
   },
   speedBadgePill: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
     borderRadius: 10,
     borderWidth: 1,
   },
   speedBadgeText: {
-    fontSize: 11,
+    fontSize: 11.5,
     fontWeight: '700',
   },
   loopPillBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 12,
   },
   versesContainer: {
     gap: 10,
+    marginTop: 4,
   },
   sectionBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
-    paddingVertical: 7,
+    paddingVertical: 8,
     borderRadius: 10,
     borderLeftWidth: 3,
-    marginBottom: 6,
-    marginTop: 8,
+    marginBottom: 8,
+    marginTop: 4,
   },
   sectionBannerText: {
-    fontSize: 12,
+    fontSize: 12.5,
     fontWeight: '700',
   },
   verseCard: {
     padding: 16,
-    borderRadius: 14,
-    borderWidth: 1,
+    borderRadius: 18,
+    borderWidth: 1.2,
     marginBottom: 8,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
   },
   arabicText: {
     fontSize: 22,
@@ -945,13 +1011,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   transliterationText: {
-    fontSize: 13,
+    fontSize: 13.5,
     lineHeight: 19,
     fontWeight: '600',
     marginBottom: 6,
   },
   translationUrText: {
-    fontSize: 12,
+    fontSize: 12.5,
     lineHeight: 18,
     textAlign: 'right',
   },

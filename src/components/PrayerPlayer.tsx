@@ -10,6 +10,9 @@ import {
   Animated,
   Easing,
   Platform,
+  Modal,
+  PanResponder,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Audio } from 'expo-av';
@@ -19,6 +22,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { ImageAssets, AudioAssets } from '../utils/assetsMap';
 import { PhraseCard } from './PhraseCard';
 import { useTheme } from '../store/hooks';
+import { PrayerStepsBottomSheet, PrayerStepsBottomSheetHandle } from './PrayerStepsBottomSheet';
 
 export interface Phrase {
   id: string;
@@ -78,9 +82,9 @@ const toArabicNum = (n: number): string => {
 const isBismillahPhrase = (str: string): boolean => {
   if (!str) return false;
   return str.includes('\u0628\u0650\u0633\u0652\u0645\u0650') ||
-         str.includes('\u0628\u0633\u0645') ||
-         str.startsWith('بِسْمِ') ||
-         str.startsWith('بسم');
+    str.includes('\u0628\u0633\u0645') ||
+    str.startsWith('بِسْمِ') ||
+    str.startsWith('بسم');
 };
 
 const FullArabicPoseView: React.FC<FullArabicPoseViewProps> = ({
@@ -147,14 +151,14 @@ const FullArabicPoseView: React.FC<FullArabicPoseViewProps> = ({
         bismillahCount === 1
           ? 'سُورَةُ الْفَاتِحَةِ'
           : bismillahCount === 2
-          ? 'سُورَةُ الإِخْلَاصِ'
-          : `سُورَة ${bismillahCount}`;
+            ? 'سُورَةُ الإِخْلَاصِ'
+            : `سُورَة ${bismillahCount}`;
       const surahTitleEn =
         bismillahCount === 1
           ? 'Surah Al-Fatiha'
           : bismillahCount === 2
-          ? 'Surah Al-Ikhlas'
-          : `Surah ${bismillahCount}`;
+            ? 'Surah Al-Ikhlas'
+            : `Surah ${bismillahCount}`;
 
       currentGroup = {
         id: phrase.id || `surah_${bismillahCount}_${idx}`,
@@ -690,6 +694,8 @@ function formatMs(ms: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
+
+// ── Draggable Floating Simulation Button ──────────────────────────────────────
 export const PrayerPlayer = ({ prayerData, onBack, hideHeader = false }: PrayerPlayerProps) => {
   const [viewMode, setViewMode] = useState<'guided' | 'fullArabic'>('guided');
   const [showViewMenu, setShowViewMenu] = useState(false);
@@ -714,6 +720,55 @@ export const PrayerPlayer = ({ prayerData, onBack, hideHeader = false }: PrayerP
   const [fontSize, setFontSize] = useState(16);
   const [showSpeedPicker, setShowSpeedPicker] = useState(false);
   const [isLooping, setIsLooping] = useState(false);
+
+  // ── Floating Simulation Button state ────────────────────────────────────────
+  const simSheetRef = useRef<PrayerStepsBottomSheetHandle>(null);
+
+  const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
+  // FAB drag offset from its default bottom-right anchor position
+  const fabDragOffset = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
+  const fabIsDragging = useRef(false);
+  const fabTouchStartTime = useRef(0);
+  const fabPanResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, gs) => Math.abs(gs.dx) > 6 || Math.abs(gs.dy) > 6,
+      onPanResponderGrant: (_, gs) => {
+        fabDragOffset.setOffset({
+          x: (fabDragOffset.x as any)._value,
+          y: (fabDragOffset.y as any)._value,
+        });
+        fabDragOffset.setValue({ x: 0, y: 0 });
+        fabIsDragging.current = false;
+        fabTouchStartTime.current = Date.now();
+      },
+      onPanResponderMove: (_, gs) => {
+        if (Math.abs(gs.dx) > 6 || Math.abs(gs.dy) > 6) fabIsDragging.current = true;
+        Animated.event([null, { dx: fabDragOffset.x, dy: fabDragOffset.y }], { useNativeDriver: false })(_, gs);
+      },
+      onPanResponderRelease: (_, gs) => {
+        fabDragOffset.flattenOffset();
+        const wasTap = !fabIsDragging.current && (Date.now() - fabTouchStartTime.current) < 300;
+        if (wasTap) {
+          setShowSimSheet(true);
+          return;
+        }
+        // Snap horizontally to nearest edge, clamp vertically
+        const curX = (fabDragOffset.x as any)._value;
+        const curY = (fabDragOffset.y as any)._value;
+        // Default anchor is bottom-right; positive x goes left, positive y goes up from bottom
+        // We allow moving anywhere but snap back to nearest horizontal side
+        const snapX = curX < 0
+          ? -(SCREEN_W - 62 - 16) // snap to left
+          : 0; // snap to right (default)
+        const clampedY = Math.max(-(SCREEN_H - 200), Math.min(curY, 80));
+        Animated.spring(fabDragOffset, { toValue: { x: snapX, y: clampedY }, useNativeDriver: false, tension: 80, friction: 10 }).start();
+      },
+      onPanResponderTerminate: () => {
+        fabDragOffset.flattenOffset();
+      },
+    })
+  ).current;
   const [audioProgress, setAudioProgress] = useState(0);
   const [audioDuration, setAudioDuration] = useState(0);
   const [audioPosition, setAudioPosition] = useState(0);
@@ -842,7 +897,7 @@ export const PrayerPlayer = ({ prayerData, onBack, hideHeader = false }: PrayerP
 
       // If component unmounted or a newer sound was requested while we were loading, discard.
       if (!isMountedRef.current || soundInstanceIdRef.current !== myId) {
-        sound.unloadAsync().catch(() => {});
+        sound.unloadAsync().catch(() => { });
         return;
       }
       soundRef.current = sound;
@@ -854,7 +909,7 @@ export const PrayerPlayer = ({ prayerData, onBack, hideHeader = false }: PrayerP
       // Setting a 100 ms interval makes the poll fine-grained enough to always
       // catch the finish event on Android without any iOS regression.
       if (Platform.OS === 'android') {
-        sound.setProgressUpdateIntervalAsync(100).catch(() => {});
+        sound.setProgressUpdateIntervalAsync(100).catch(() => { });
       }
 
       // ── Duration-based safety-net (Android only) ─────────────────────────
@@ -880,7 +935,7 @@ export const PrayerPlayer = ({ prayerData, onBack, hideHeader = false }: PrayerP
             if (s.isPlaying) return;
             // Clip finished but didJustFinish was missed — advance
             goToStepRef.current?.(stepIndexRef.current + 1, true);
-          }).catch(() => {});
+          }).catch(() => { });
         }, safetyDelay);
       }
 
@@ -1453,7 +1508,49 @@ export const PrayerPlayer = ({ prayerData, onBack, hideHeader = false }: PrayerP
           </View>
         </View>
       )}
-    </SafeAreaView>
+
+      {/* ── Draggable Floating Simulation Button (hidden while playing) ── */}
+      {!isPlaying && (
+        <Animated.View
+          style={[
+            fabStyles.fabContainer,
+            {
+              bottom: bottomPadding + 72, // sits just above the controls bar
+              right: 16,
+              transform: [
+                { translateX: fabDragOffset.x },
+                { translateY: fabDragOffset.y },
+              ],
+            },
+          ]}
+          {...fabPanResponder.panHandlers}
+        >
+          <TouchableOpacity
+            onPress={() => simSheetRef.current?.open()}
+            activeOpacity={0.85}
+          >
+            <LinearGradient
+              colors={[colors.primary, colors.secondary]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={fabStyles.fabGradient}
+            >
+              <Ionicons name="sparkles" size={20} color="#fff" />
+              <Text style={fabStyles.fabLabel}>Visuals</Text>
+            </LinearGradient>
+            {/* Subtle glow ring */}
+            <View style={[fabStyles.fabGlow, { borderColor: colors.primary }]} />
+          </TouchableOpacity>
+        </Animated.View>
+
+      )
+      }
+
+      <PrayerStepsBottomSheet
+        ref={simSheetRef}
+        prayerData={prayerData}
+      />
+    </SafeAreaView >
   );
 };
 
@@ -1547,14 +1644,14 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginTop: 6,
     marginBottom: 4,
-    paddingHorizontal:3,
+    paddingHorizontal: 3,
     borderRadius: 16,
     borderWidth: 1,
     height: 150,
     flexDirection: 'row',
     justifyContent: 'space-between',
     overflow: 'hidden',
-   
+
   },
   poseHorizImageSide: {
     // flex: 3.5, // 75-80% horizontal ratio for pose image
@@ -1675,4 +1772,40 @@ const styles = StyleSheet.create({
   speedValue: { fontSize: 16, fontWeight: '700' },
   speedCancelBtn: { alignItems: 'center', paddingVertical: 14, borderTopWidth: 1, marginTop: 4 },
   speedCancelText: { fontSize: 15, fontWeight: '500' },
+});
+
+// ── Floating Action Button styles ─────────────────────────────────────────────
+const fabStyles = StyleSheet.create({
+  fabContainer: {
+    position: 'absolute',
+    zIndex: 9999,
+    elevation: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.4,
+    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 14,
+  },
+  fabGradient: {
+    width: 62,
+    height: 62,
+    borderRadius: 31,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+  },
+  fabLabel: {
+    color: '#fff',
+    fontSize: 8,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+    marginTop: 1,
+  },
+  fabGlow: {
+    position: 'absolute',
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    borderWidth: 1.5,
+    opacity: 0.3,
+  },
 });

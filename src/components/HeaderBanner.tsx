@@ -105,7 +105,7 @@ export const HeaderBanner: React.FC<HeaderBannerProps> = ({
       <LinearGradient
         colors={
           isDarkMode
-            ? ['rgba(11, 25, 44, 0.75)', 'rgba(30, 62, 98, 0.85)']
+            ? ['rgba(2, 11, 28, 0.88)', 'rgba(5, 20, 46, 0.95)']
             : ['rgba(14, 55, 122, 0.65)', 'rgba(29, 78, 216, 0.78)']
         }
         style={styles.gradientHeader}

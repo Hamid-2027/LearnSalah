@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,413 +10,458 @@ import {
   Platform,
   Image,
   Dimensions,
+  Animated,
+  Switch,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { Ionicons, MaterialCommunityIcons, Feather } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme, useAuth } from '../store/hooks';
 
-const SCREEN_HEIGHT = Dimensions.get('window').height;
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const DRAWER_WIDTH = Math.min(SCREEN_WIDTH * 0.80, 300);
 
 interface SidebarDrawerProps {
   visible: boolean;
   onClose: () => void;
 }
 
-export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({
-  visible,
-  onClose,
-}) => {
+export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({ visible, onClose }) => {
   const navigation = useNavigation<any>();
-  const { user, isAuthenticated, isGuest, signOut } = useAuth();
-  // Internal language state — drawer manages its own language selection
-  const [lang, setLang] = useState<'en' | 'ur'>('en');
-  const isUrdu = lang === 'ur';
+  const { user, isAuthenticated, signOut } = useAuth();
   const { isDarkMode, toggleDarkMode, colors } = useTheme();
+  const [lang, setLang] = useState<'en' | 'ur'>('en');
 
-  // ✅ Always-accurate insets — never stale inside a Modal
-  const insets = useSafeAreaInsets();
-  const topPad = insets.top > 0 ? insets.top : Platform.OS === 'android' ? 24 : 44;
-  const bottomPad = insets.bottom > 0 ? insets.bottom : 16;
+  const insets   = useSafeAreaInsets();
+  const topPad   = insets.top > 0 ? insets.top : (Platform.OS === 'android' ? 24 : 44);
+  const botPad   = insets.bottom > 0 ? insets.bottom : 16;
 
-  const menuItems = [
-    { icon: 'home-outline', titleEn: 'Home', titleUr: 'صفحہ اول', type: 'ion' },
-    { icon: 'book-outline', titleEn: 'Al-Quran', titleUr: 'القرآن', type: 'ion' },
-    { icon: 'star-outline', titleEn: 'Hadith Collection', titleUr: 'حدیث کا مجموعہ', type: 'ion' },
-    { icon: 'compass-outline', titleEn: 'Qibla Direction', titleUr: 'قبلہ کی سمت', type: 'mci' },
-    { icon: 'clock-outline', titleEn: 'Prayer Timings', titleUr: 'اوقاتِ نماز', type: 'mci' },
-    { icon: 'hand-heart-outline', titleEn: 'Duas & Supplications', titleUr: 'دعائیں اور مناجات', type: 'mci' },
-    { icon: 'counter', titleEn: 'Digital Tasbeeh', titleUr: 'ڈیجیٹل تسبیح', type: 'mci' },
-    { icon: 'bookmark-outline', titleEn: 'Saved Bookmarks', titleUr: 'محفوظ شدہ', type: 'ion' },
-    { icon: 'settings-outline', titleEn: 'Settings', titleUr: 'ترتیبات', type: 'ion' },
-    { icon: 'share-social-outline', titleEn: 'Share App', titleUr: 'ایپ شیئر کریں', type: 'ion' },
-    { icon: 'star-half-outline', titleEn: 'Rate Us', titleUr: 'درجہ بندی کریں', type: 'ion' },
-  ];
+  // ── Slide + fade animation ───────────────────────────────────────────────────
+  const slideAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
+  const fadeAnim  = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (visible) {
+      Animated.parallel([
+        Animated.spring(slideAnim, { toValue: 0, useNativeDriver: true, tension: 68, friction: 11 }),
+        Animated.timing(fadeAnim,  { toValue: 1, duration: 200, useNativeDriver: true }),
+      ]).start();
+    } else {
+      Animated.parallel([
+        Animated.timing(slideAnim, { toValue: -DRAWER_WIDTH, duration: 210, useNativeDriver: true }),
+        Animated.timing(fadeAnim,  { toValue: 0, duration: 180, useNativeDriver: true }),
+      ]).start();
+    }
+  }, [visible]);
+
+  // ── Color aliases ────────────────────────────────────────────────────────────
+  const C = colors;
+  const primary = C.primary;
+
+  // ── Navigation helper ────────────────────────────────────────────────────────
+  const go = (screen: string) => {
+    onClose();
+    setTimeout(() => navigation.navigate(screen), 220);
+  };
+
+  const handleSignOut = () => {
+    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Sign Out', style: 'destructive',
+        onPress: () => { signOut(); onClose(); setTimeout(() => navigation.navigate('Auth'), 220); },
+      },
+    ]);
+  };
+
+  // ── Shared row renderer ──────────────────────────────────────────────────────
+  const NavRow = ({
+    iconName, iconType = 'ion', label, onPress, isLast = false,
+  }: {
+    iconName: string; iconType?: 'ion' | 'mci'; label: string;
+    onPress: () => void; isLast?: boolean;
+  }) => (
+    <TouchableOpacity
+      activeOpacity={0.7}
+      onPress={onPress}
+      style={[
+        styles.row,
+        !isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.border },
+      ]}
+    >
+      <View style={[styles.rowIcon, { backgroundColor: primary + '15' }]}>
+        {iconType === 'mci'
+          ? <MaterialCommunityIcons name={iconName as any} size={18} color={primary} />
+          : <Ionicons name={iconName as any} size={18} color={primary} />
+        }
+      </View>
+      <Text style={[styles.rowLabel, { color: C.textPrimary }]}>{label}</Text>
+      <Ionicons name="chevron-forward" size={15} color={C.textSecondary} />
+    </TouchableOpacity>
+  );
+
+  // ── Section wrapper ──────────────────────────────────────────────────────────
+  const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
+    <View style={styles.section}>
+      <Text style={[styles.sectionTitle, { color: C.textSecondary }]}>
+        {title.toUpperCase()}
+      </Text>
+      <View style={[styles.sectionCard, { backgroundColor: C.surfaceSecondary, borderColor: C.border }]}>
+        {children}
+      </View>
+    </View>
+  );
 
   return (
     <Modal
       visible={visible}
-      animationType="fade"
-      transparent={true}
-      statusBarTranslucent={true}
+      animationType="none"
+      transparent
+      statusBarTranslucent
       onRequestClose={onClose}
     >
       <View style={styles.overlay}>
-        {/* Drawer Content (Left Side) */}
-        <View
+
+        {/* ── Backdrop ── */}
+        <Animated.View style={[StyleSheet.absoluteFillObject, { opacity: fadeAnim }]}>
+          <TouchableWithoutFeedback onPress={onClose}>
+            <View style={[styles.backdrop, { backgroundColor: C.modalOverlay }]} />
+          </TouchableWithoutFeedback>
+        </Animated.View>
+
+        {/* ── Drawer ── */}
+        <Animated.View
           style={[
-            styles.drawerContainer,
+            styles.drawer,
             {
-              backgroundColor: colors.surface,
-              // ✅ Explicit full screen height — reliable inside Modal
-              height: SCREEN_HEIGHT,
+              backgroundColor: C.surface,
+              borderRightColor: C.border,
+              paddingTop: topPad,
+              paddingBottom: botPad,
+              transform: [{ translateX: slideAnim }],
             },
           ]}
         >
-          {/* ✅ Plain View with manual inset-based paddingTop instead of SafeAreaView */}
-          <View style={[styles.drawerInner, { paddingTop: topPad, paddingBottom: bottomPad }]}>
-            {/* Drawer Header */}
-            <View
-              style={[
-                styles.header,
-                {
-                  backgroundColor: colors.surfaceSecondary,
-                  borderBottomColor: colors.border,
-                },
-              ]}
-            >
-              <View style={styles.headerContent}>
-                <View style={[styles.appIconBadge, isDarkMode && { backgroundColor: '#2E2745' }]}>
-                  <Image
-                    source={require('../assets/images/app_logo.png')}
-                    style={{ width: 36, height: 36 }}
-                    resizeMode="contain"
-                  />
-                </View>
-                <View style={{ flex: 1, marginLeft: 12 }}>
-                  <Text style={[styles.appTitle, { color: colors.textPrimary }]}>Learn Namaz & Quran</Text>
-                  <Text style={[styles.appSubtitle, { color: colors.textSecondary }]}>
-                    {isUrdu ? 'اسلامی ہدایت نامہ' : 'Your Islamic Guide'}
-                  </Text>
-                </View>
-                <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-                  <Ionicons name="close" size={24} color={isDarkMode ? '#AAA' : '#555'} />
-                </TouchableOpacity>
-              </View>
-            </View>
 
-            {/* Account / Guest Profile Row */}
-            <View style={[styles.accountCard, { backgroundColor: colors.surfaceSecondary, borderColor: colors.border }]}>
-              <View style={[styles.accountAvatar, { backgroundColor: isAuthenticated ? 'rgba(34,211,238,0.15)' : 'rgba(255,255,255,0.08)' }]}>
-                <Ionicons
-                  name={isAuthenticated ? 'person' : 'sparkles-outline'}
-                  size={18}
-                  color={isAuthenticated ? '#22d3ee' : colors.textSecondary}
+          {/* ════ HEADER ════ */}
+          <LinearGradient
+            colors={isDarkMode ? ['#051833', C.surface] : ['#EFF6FF', '#FFFFFF']}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+            style={styles.header}
+          >
+            {/* Brand */}
+            <View style={styles.brandRow}>
+              <View style={[styles.appIconBg, { backgroundColor: primary + '20', borderColor: primary + '35' }]}>
+                <Image
+                  source={require('../assets/images/app_logo.png')}
+                  style={{ width: 28, height: 28 }}
+                  resizeMode="contain"
                 />
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.accountName, { color: colors.textPrimary }]} numberOfLines={1}>
-                  {isAuthenticated ? (user?.fullName || user?.email || 'Believer') : 'Guest Mode'}
+              <View style={{ flex: 1, marginLeft: 10 }}>
+                <Text style={[styles.appName, { color: C.textPrimary }]}>Salah 786</Text>
+                <Text style={[styles.appTagline, { color: C.textSecondary }]}>Your Islamic Companion</Text>
+              </View>
+              <TouchableOpacity
+                onPress={onClose}
+                activeOpacity={0.7}
+                style={[styles.closeBtn, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}
+              >
+                <Ionicons name="close" size={17} color={C.textPrimary} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Profile card */}
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => { if (!isAuthenticated) go('Auth'); }}
+              style={[styles.profileCard, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(37,99,235,0.06)', borderColor: primary + '28' }]}
+            >
+              <View style={[styles.avatar, { backgroundColor: primary + '20', borderColor: primary + '40' }]}>
+                <Ionicons name="person" size={17} color={primary} />
+              </View>
+              <View style={{ flex: 1, marginLeft: 10 }}>
+                <Text style={[styles.profileName, { color: C.textPrimary }]} numberOfLines={1}>
+                  {isAuthenticated ? (user?.fullName || user?.email || 'Believer') : 'Guest User'}
                 </Text>
-                <Text style={[styles.accountSub, { color: colors.textSecondary }]} numberOfLines={1}>
-                  {isAuthenticated ? (user?.email || 'Signed in') : 'Sign in to sync progress'}
+                <Text style={[styles.profileSub, { color: C.textSecondary }]} numberOfLines={1}>
+                  {isAuthenticated ? (user?.email || 'Signed in') : 'Tap to sign in'}
                 </Text>
               </View>
+              <View style={[styles.statusDot, { backgroundColor: isAuthenticated ? C.success : C.textSecondary + '60' }]} />
+            </TouchableOpacity>
+          </LinearGradient>
+
+          {/* ════ SCROLLABLE MENU ════ */}
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 16 }}
+          >
+
+            {/* ── Navigate ── */}
+            <Section title="Navigate">
+              <NavRow iconName="home-outline"  label="Home"         onPress={() => go('Home')} />
+              <NavRow iconName="hands-pray"    iconType="mci" label="Prayer Guide" onPress={() => go('Prayer')} isLast />
+            </Section>
+
+            {/* ── Preferences ── */}
+            <Section title="Preferences">
+
+              {/* Dark Mode with Switch */}
+              <View style={[styles.row, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.border }]}>
+                <View style={[styles.rowIcon, { backgroundColor: primary + '15' }]}>
+                  <Ionicons name={isDarkMode ? 'moon' : 'sunny-outline'} size={18} color={primary} />
+                </View>
+                <Text style={[styles.rowLabel, { color: C.textPrimary }]}>Dark Mode</Text>
+                <Switch
+                  value={isDarkMode}
+                  onValueChange={(val) => toggleDarkMode(val)}
+                  thumbColor={isDarkMode
+                    ? (Platform.OS === 'android' ? '#FFFFFF' : undefined)
+                    : (Platform.OS === 'android' ? '#F1F5F9' : undefined)
+                  }
+                  trackColor={{ false: C.border, true: primary }}
+                  ios_backgroundColor={C.border}
+                />
+              </View>
+
+              {/* Language */}
+              <View style={[styles.row, { borderBottomWidth: 0 }]}>
+                <View style={[styles.rowIcon, { backgroundColor: primary + '15' }]}>
+                  <Ionicons name="language-outline" size={18} color={primary} />
+                </View>
+                <Text style={[styles.rowLabel, { color: C.textPrimary }]}>Language</Text>
+                {/* EN / UR pill toggle */}
+                <View style={[styles.langPills, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)' }]}>
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={() => setLang('en')}
+                    style={[styles.langPill, lang === 'en' && { backgroundColor: primary }]}
+                  >
+                    <Text style={[styles.langPillText, { color: lang === 'en' ? '#FFF' : C.textSecondary }]}>EN</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={() => setLang('ur')}
+                    style={[styles.langPill, lang === 'ur' && { backgroundColor: primary }]}
+                  >
+                    <Text style={[styles.langPillText, { color: lang === 'ur' ? '#FFF' : C.textSecondary }]}>اردو</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+            </Section>
+
+            {/* ── Account ── */}
+            <Section title="Account">
               {isAuthenticated ? (
                 <TouchableOpacity
-                  style={[styles.authActionBtn, { borderColor: 'rgba(239, 68, 68, 0.4)' }]}
-                  onPress={() => {
-                    signOut();
-                    onClose();
-                    navigation.navigate('Auth');
-                  }}
+                  activeOpacity={0.7}
+                  onPress={handleSignOut}
+                  style={[styles.row, { borderBottomWidth: 0 }]}
                 >
-                  <Text style={[styles.authActionText, { color: '#ef4444' }]}>Sign Out</Text>
+                  <View style={[styles.rowIcon, { backgroundColor: C.error + '15' }]}>
+                    <Ionicons name="log-out-outline" size={18} color={C.error} />
+                  </View>
+                  <Text style={[styles.rowLabel, { color: C.error }]}>Sign Out</Text>
                 </TouchableOpacity>
               ) : (
                 <TouchableOpacity
-                  style={[styles.authActionBtn, { borderColor: '#22d3ee' }]}
-                  onPress={() => {
-                    onClose();
-                    navigation.navigate('Auth');
-                  }}
+                  activeOpacity={0.85}
+                  onPress={() => go('Auth')}
+                  style={styles.signInWrap}
                 >
-                  <Text style={[styles.authActionText, { color: '#22d3ee' }]}>Sign In</Text>
+                  <LinearGradient
+                    colors={[C.primary, C.primaryDark]}
+                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                    style={styles.signInGrad}
+                  >
+                    <Ionicons name="person-add-outline" size={16} color="#FFF" />
+                    <Text style={styles.signInText}>Sign In / Register</Text>
+                  </LinearGradient>
                 </TouchableOpacity>
               )}
-            </View>
+            </Section>
 
-            {/* Language Selection Row */}
-            <View style={[styles.langSection, { borderBottomColor: colors.border }]}>
-              <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
-                {isUrdu ? 'زبان منتخب کریں' : 'Language'}
-              </Text>
-              <View style={[styles.langToggleRow, { backgroundColor: colors.surfaceSecondary }]}>
-                <TouchableOpacity
-                  style={[styles.langOption, lang === 'en' && { backgroundColor: colors.primary }]}
-                  onPress={() => setLang('en')}
-                >
-                  <Text style={[styles.langText, { color: lang === 'en' ? '#FFF' : colors.textSecondary }]}>
-                    English
-                  </Text>
-                </TouchableOpacity>
+          </ScrollView>
 
-                <TouchableOpacity
-                  style={[styles.langOption, lang === 'ur' && { backgroundColor: colors.primary }]}
-                  onPress={() => setLang('ur')}
-                >
-                  <Text style={[styles.langText, { color: lang === 'ur' ? '#FFF' : colors.textSecondary }]}>
-                    اردو
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Appearance / Dark Mode Selection Row */}
-            <View style={[styles.langSection, { borderBottomColor: colors.border }]}>
-              <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
-                {isUrdu ? 'تھیم (موضوع)' : 'Appearance'}
-              </Text>
-              <View style={[styles.langToggleRow, { backgroundColor: colors.surfaceSecondary }]}>
-                <TouchableOpacity
-                  style={[styles.langOption, !isDarkMode && { backgroundColor: colors.primary }]}
-                  onPress={() => toggleDarkMode(false)}
-                >
-                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-                    <Ionicons
-                      name="sunny-outline"
-                      size={15}
-                      color={!isDarkMode ? '#FFF' : colors.textSecondary}
-                      style={{ marginRight: 6 }}
-                    />
-                    <Text style={[styles.langText, { color: !isDarkMode ? '#FFF' : colors.textSecondary }]}>
-                      {isUrdu ? 'روشن' : 'Light'}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.langOption, isDarkMode && { backgroundColor: colors.primary }]}
-                  onPress={() => toggleDarkMode(true)}
-                >
-                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-                    <Ionicons
-                      name="moon"
-                      size={15}
-                      color={isDarkMode ? '#FFF' : colors.textSecondary}
-                      style={{ marginRight: 6 }}
-                    />
-                    <Text style={[styles.langText, { color: isDarkMode ? '#FFF' : colors.textSecondary }]}>
-                      {isUrdu ? 'تاریک' : 'Dark'}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Menu Options ScrollView */}
-            <ScrollView style={styles.menuScroll} showsVerticalScrollIndicator={false}>
-              <View style={styles.menuList}>
-                {menuItems.map((item, idx) => (
-                  <TouchableOpacity
-                    key={idx}
-                    style={styles.menuItem}
-                    activeOpacity={0.7}
-                    onPress={onClose}
-                  >
-                    <View style={styles.iconContainer}>
-                      {item.type === 'ion' ? (
-                        <Ionicons name={item.icon as any} size={20} color={colors.primary} />
-                      ) : (
-                        <MaterialCommunityIcons name={item.icon as any} size={20} color={colors.primary} />
-                      )}
-                    </View>
-                    <Text style={[styles.menuText, { color: colors.textPrimary }]}>
-                      {isUrdu ? item.titleUr : item.titleEn}
-                    </Text>
-                    <Feather
-                      name="chevron-right"
-                      size={16}
-                      color={isDarkMode ? '#666' : '#BBB'}
-                      style={{ marginLeft: 'auto' }}
-                    />
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              <View style={styles.versionFooter}>
-                <Text style={styles.versionText}>Learn Namaz v1.0.0</Text>
-                <Text style={[styles.blessingText, { color: colors.primary }]}>جزاك اللهُ خيراً</Text>
-              </View>
-            </ScrollView>
+          {/* ════ FOOTER ════ */}
+          <View style={[styles.footer, { borderTopColor: C.border }]}>
+            <Text style={[styles.footerVersion, { color: C.textSecondary }]}>v1.0.0</Text>
+            <Text style={[styles.footerBlessing, { color: primary }]}>جزاك اللهُ خيراً</Text>
           </View>
-        </View>
 
-        {/* Backdrop Touchable (Right Side) */}
-        <TouchableWithoutFeedback onPress={onClose}>
-          <View style={[styles.backdrop, { backgroundColor: colors.modalOverlay }]} />
-        </TouchableWithoutFeedback>
+        </Animated.View>
       </View>
     </Modal>
   );
 };
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    flexDirection: 'row',
-  },
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  drawerContainer: {
-    width: '78%',
-    maxWidth: 320,
-    backgroundColor: '#FFFFFF',
+  overlay: { flex: 1, flexDirection: 'row' },
+  backdrop: { flex: 1 },
+
+  drawer: {
+    width: DRAWER_WIDTH,
+    height: SCREEN_HEIGHT,
+    borderRightWidth: StyleSheet.hairlineWidth,
     shadowColor: '#000',
-    shadowOffset: { width: 4, height: 0 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 10,
+    shadowOffset: { width: 6, height: 0 },
+    shadowOpacity: 0.16,
+    shadowRadius: 14,
+    elevation: 16,
   },
-  // ✅ Inner layout container that gets the manual safe-area padding
-  drawerInner: {
-    flex: 1,
-  },
+
+  // Header
   header: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: '#F5F2FC',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E8E8F2',
+    paddingHorizontal: 14,
+    paddingTop: 14,
+    paddingBottom: 14,
   },
-  headerContent: {
+  brandRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 12,
   },
-  appIconBadge: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: '#EAE4F7',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  appTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#2B2342',
-  },
-  appSubtitle: {
-    fontSize: 12,
-    color: '#7966B2',
-    marginTop: 2,
-  },
-  closeBtn: {
-    padding: 6,
-  },
-  langSection: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0EFF5',
-  },
-  sectionLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#777',
-    marginBottom: 8,
-  },
-  langToggleRow: {
-    flexDirection: 'row',
-    backgroundColor: '#F0EDF7',
-    borderRadius: 10,
-    padding: 3,
-  },
-  langOption: {
-    flex: 1,
-    paddingVertical: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 8,
-  },
-  langText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#555',
-  },
-  menuScroll: {
-    flex: 1,
-  },
-  menuList: {
-    paddingVertical: 8,
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-  },
-  iconContainer: {
-    width: 32,
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  menuText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#333',
-  },
-  versionFooter: {
-    paddingVertical: 24,
-    alignItems: 'center',
-  },
-  versionText: {
-    fontSize: 11,
-    color: '#AAA',
-  },
-  blessingText: {
-    fontSize: 13,
-    color: '#7966B2',
-    marginTop: 4,
-    fontWeight: '600',
-  },
-  accountCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: 16,
-    marginTop: 12,
-    marginBottom: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 14,
+  appIconBg: {
+    width: 42,
+    height: 42,
+    borderRadius: 13,
     borderWidth: 1,
-    gap: 10,
-  },
-  accountAvatar: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  accountName: {
-    fontSize: 13,
-    fontWeight: '700',
+  appName: {
+    fontSize: 15.5,
+    fontWeight: '800',
+    letterSpacing: -0.2,
   },
-  accountSub: {
+  appTagline: {
     fontSize: 11,
+    fontWeight: '500',
     marginTop: 1,
   },
-  authActionBtn: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
+  closeBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // Profile
+  profileCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 11,
+    borderRadius: 13,
     borderWidth: 1,
   },
-  authActionText: {
-    fontSize: 11,
+  avatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  profileName: { fontSize: 13, fontWeight: '700' },
+  profileSub:  { fontSize: 10.5, marginTop: 1 },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginLeft: 6,
+  },
+
+  // Sections
+  section: {
+    marginTop: 18,
+    paddingHorizontal: 14,
+  },
+  sectionTitle: {
+    fontSize: 10.5,
+    fontWeight: '800',
+    letterSpacing: 0.9,
+    marginBottom: 7,
+    paddingHorizontal: 2,
+  },
+  sectionCard: {
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: 'hidden',
+  },
+
+  // Row
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+  },
+  rowIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  rowLabel: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+
+  // Language pills
+  langPills: {
+    flexDirection: 'row',
+    borderRadius: 9,
+    padding: 3,
+    gap: 2,
+  },
+  langPill: {
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  langPillText: {
+    fontSize: 11.5,
     fontWeight: '700',
   },
+
+  // Auth
+  signInWrap: {
+    margin: 10,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  signInGrad: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 13,
+  },
+  signInText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#FFF',
+    letterSpacing: 0.1,
+  },
+
+  // Footer
+  footer: {
+    alignItems: 'center',
+    paddingVertical: 14,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  footerVersion:  { fontSize: 11, fontWeight: '500' },
+  footerBlessing: { fontSize: 13, fontWeight: '700', marginTop: 4 },
 });

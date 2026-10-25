@@ -78,7 +78,7 @@ export default function Step1Welcome({ onContinue }: Props) {
   }, []);
 
   return (
-    <TouchableOpacity activeOpacity={1} onPress={onContinue} style={{ flex: 1 }}>
+    <TouchableOpacity activeOpacity={1} onPress={onContinue} style={{ flex: 1, paddingVertical: 81 }}>
       {/* Top hero text */}
       <View style={s.heroSection}>
         <Text style={s.heroText}>
